@@ -1,0 +1,5 @@
+<use name=CondCore/DBOutputService>
+<use name=CondFormats/Calibration>
+<library file=stubs/testPoolDBOutputServiceClient.cc name=testPoolDBOutputServiceClient>
+  <flags SEAL_PLUGIN_NAME="testPoolDBOutputServiceClient">
+</library>
