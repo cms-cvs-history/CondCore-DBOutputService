@@ -10,12 +10,11 @@ namespace edm{
 // class decleration
 //
 
-class testPoolDBOutputServiceClient : public edm::EDAnalyzer {
+class createSinglePayload : public edm::EDAnalyzer {
  public:
-  explicit testPoolDBOutputServiceClient(const edm::ParameterSet& iConfig );
-  ~testPoolDBOutputServiceClient();
-
-  virtual void analyze(const edm::Event&, const edm::EventSetup&);
+  explicit createSinglePayload(const edm::ParameterSet& iConfig );
+  ~createSinglePayload();
+  virtual void analyze( const edm::Event&, const edm::EventSetup& ){}
   virtual void endJob();
  private:
   // ----------member data ---------------------------
