@@ -3,3 +3,6 @@
 <library file=stubs/createSinglePayload.cc name=createSinglePayload>
   <flags SEAL_PLUGIN_NAME="createSinglePayload">
 </library>
+<library file=stubs/createPayloads.cc name=createPayloads>
+  <flags SEAL_PLUGIN_NAME="createPayloads">
+</library>
