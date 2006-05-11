@@ -6,27 +6,26 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "CondFormats/DataRecord/interface/PedestalsRcd.h"
-#include "createSinglePayload.h"
-createSinglePayload::createSinglePayload(const edm::ParameterSet& iConfig)
+#include "appendSinglePayload.h"
+appendSinglePayload::appendSinglePayload(const edm::ParameterSet& iConfig)
 {
-  std::cout<<"createSinglePayload::createSinglePayload"<<std::endl;
+  std::cout<<"appendSinglePayload::appendSinglePayload"<<std::endl;
 }
 
-createSinglePayload::~createSinglePayload()
+appendSinglePayload::~appendSinglePayload()
 {
-  std::cout<<"createSinglePayload::createSinglePayload"<<std::endl;
+  std::cout<<"appendSinglePayload::appendSinglePayload"<<std::endl;
 }
-/*void
-createSinglePayload::analyze(const edm::Event& evt, 
+void
+appendSinglePayload::analyze(const edm::Event& evt, 
 			     const edm::EventSetup& evtSetup){
   edm::ESHandle<Pedestals> peds;
   evtSetup.get<PedestalsRcd>().get(peds);
 }
-*/
 void
-createSinglePayload::endJob()
+appendSinglePayload::endJob()
 {
-  std::cout<<"createSinglePayload::endJob"<<std::endl;
+  std::cout<<"appendSinglePayload::endJob"<<std::endl;
   Pedestals* myped=new Pedestals;
   for(int ichannel=1; ichannel<=5; ++ichannel){
     Pedestals::Item item;
@@ -50,4 +49,4 @@ createSinglePayload::endJob()
   }
 }
 #include "FWCore/Framework/interface/MakerMacros.h"
-DEFINE_FWK_MODULE(createSinglePayload)
+DEFINE_FWK_MODULE(appendSinglePayload)
