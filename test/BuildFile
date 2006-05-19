@@ -5,9 +5,12 @@
   <flags SEAL_PLUGIN_NAME="createSinglePayload">
 </library>
 <library file=stubs/appendSinglePayload.cc name=appendSinglePayload>
- <use name
   <use name=CondFormats/DataRecord>
   <flags SEAL_PLUGIN_NAME="appendSinglePayload">
+</library>
+<library file=stubs/appendManyPayloads.cc name=appendManyPayloads>
+  <use name=CondFormats/DataRecord>
+  <flags SEAL_PLUGIN_NAME="appendManyPayloads">
 </library>
 <library file=stubs/createManyPayloads.cc name=createManyPayloads>
   <flags SEAL_PLUGIN_NAME="createManyPayloads">
