@@ -29,7 +29,7 @@ appendManyPayloads::analyze(const edm::Event& evt,
     if( mydbservice.isAvailable() ){
       unsigned long long currentTime=mydbservice->currentTime();
       std::cout<<"currentTime "<<currentTime<<std::endl;
-      if( currentTime%5==0 ){
+      if( currentTime%2==0 ){
 	std::cout<<"appending new calib data valid from "<<currentTime+1<<" to iov closing time"<<std::endl;
 	Pedestals* myped=new Pedestals;
 	for(int ichannel=1; ichannel<=5; ++ichannel){
