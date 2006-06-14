@@ -25,24 +25,24 @@ appendManyPayloads::analyze(const edm::Event& evt,
   evtSetup.get<PedestalsRcd>().get(peds);
   std::cout<<"get current data"<<std::endl;
   edm::Service<cond::service::PoolDBOutputService> mydbservice;
+  if( !mydbservice.isAvailable() ){
+    std::cout<<"Service is unavailable"<<std::endl;
+    return;
+  }
+  size_t callbackToken=mydbservice->callbackToken("Pedestals");
   try{
-    if( mydbservice.isAvailable() ){
-      unsigned long long currentTime=mydbservice->currentTime();
-      std::cout<<"currentTime "<<currentTime<<std::endl;
-      if( currentTime%2==0 ){
-	std::cout<<"appending new calib data valid from "<<currentTime+1<<" to iov closing time"<<std::endl;
-	Pedestals* myped=new Pedestals;
-	for(int ichannel=1; ichannel<=5; ++ichannel){
-	  Pedestals::Item item;
-	  item.m_mean=1.11*ichannel+currentTime;
-	  item.m_variance=1.12*ichannel+currentTime;
-	  myped->m_pedestals.push_back(item);
-	}
-	size_t callbackToken=mydbservice->callbackToken("Pedestals");
-	mydbservice->newValidityForNewPayload<Pedestals>(myped,currentTime,callbackToken);
+    unsigned long long currentTime=mydbservice->currentTime();
+    std::cout<<"currentTime "<<currentTime<<std::endl;
+    if( currentTime%2==0 ){
+      std::cout<<"appending new calib data valid from "<<currentTime+1<<" to iov closing time"<<std::endl;
+      Pedestals* myped=new Pedestals;
+      for(int ichannel=1; ichannel<=5; ++ichannel){
+	Pedestals::Item item;
+	item.m_mean=1.11*ichannel+currentTime;
+	item.m_variance=1.12*ichannel+currentTime;
+	myped->m_pedestals.push_back(item);
       }
-    }else{
-      std::cout<<"Service is unavailable"<<std::endl;
+      mydbservice->newValidityForNewPayload<Pedestals>(myped,currentTime,callbackToken);
     }
   }catch(const cond::Exception& er){
     std::cout<<er.what()<<std::endl;

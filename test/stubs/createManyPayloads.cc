@@ -18,6 +18,12 @@ void
 createManyPayloads::analyze( const edm::Event& evt, const edm::EventSetup& evtSetup)
 {
   std::cout<<"createManyPayloads::analyze "<<std::endl;
+  edm::Service<cond::service::PoolDBOutputService> mydbservice;
+  if( !mydbservice.isAvailable() ){
+    std::cout<<"Service is unavailable"<<std::endl;
+    return;
+  }
+  size_t callbackToken=mydbservice->callbackToken("Pedestals");
   unsigned int irun=evt.id().run();
   if(irun%2==0){
     Pedestals* myped=new Pedestals;
@@ -27,21 +33,15 @@ createManyPayloads::analyze( const edm::Event& evt, const edm::EventSetup& evtSe
       item.m_variance=1.12*ichannel;
       myped->m_pedestals.push_back(item);
     }
-    edm::Service<cond::service::PoolDBOutputService> mydbservice;
-    if( mydbservice.isAvailable() ){
-      try{
-	std::cout<<"current time "<<mydbservice->currentTime()<<std::endl;
-	size_t callbackToken=mydbservice->callbackToken("Pedestals");
-	mydbservice->newValidityForNewPayload<Pedestals>(myped,mydbservice->currentTime(),callbackToken);
-      }catch(const cond::Exception& er){
-	std::cout<<er.what()<<std::endl;
-      }catch(const std::exception& er){
-	std::cout<<"caught std::exception "<<er.what()<<std::endl;
-      }catch(...){
-	std::cout<<"Funny error"<<std::endl;
-    }
-    }else{
-      std::cout<<"Service is unavailable"<<std::endl;
+    try{
+      std::cout<<"current time "<<mydbservice->currentTime()<<std::endl;
+      mydbservice->newValidityForNewPayload<Pedestals>(myped,mydbservice->currentTime(),callbackToken);
+    }catch(const cond::Exception& er){
+      std::cout<<er.what()<<std::endl;
+    }catch(const std::exception& er){
+      std::cout<<"caught std::exception "<<er.what()<<std::endl;
+    }catch(...){
+      std::cout<<"Funny error"<<std::endl;
     }
   }
 }

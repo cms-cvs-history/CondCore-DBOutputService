@@ -29,25 +29,24 @@ void
 appendSinglePayload::endJob()
 {
   std::cout<<"appendSinglePayload::endJob"<<std::endl;
-  
   edm::Service<cond::service::PoolDBOutputService> mydbservice;
+  if( !mydbservice.isAvailable() ){
+    std::cout<<"Service is unavailable"<<std::endl;
+    return;
+  }
+  size_t callbackToken=mydbservice->callbackToken("Pedestals");
   try{
-    if( mydbservice.isAvailable() ){
-      unsigned long long currentTime=mydbservice->currentTime();
-      std::cout<<"currentTime last run "<<currentTime<<std::endl;
-      std::cout<<"append new calib data valid from "<<currentTime+1<<" to iov closing time"<<std::endl;
-      Pedestals* myped=new Pedestals;
-      for(int ichannel=1; ichannel<=5; ++ichannel){
-	Pedestals::Item item;
-	item.m_mean=1.11*ichannel+currentTime;
-	item.m_variance=1.12*ichannel+currentTime;
-	myped->m_pedestals.push_back(item);
-      }
-      size_t callbackToken=mydbservice->callbackToken("Pedestals");
-      mydbservice->newValidityForNewPayload<Pedestals>(myped,currentTime,callbackToken);
-    }else{
-      std::cout<<"Service is unavailable"<<std::endl;
+    unsigned long long currentTime=mydbservice->currentTime();
+    std::cout<<"currentTime last run "<<currentTime<<std::endl;
+    std::cout<<"append new calib data valid from "<<currentTime+1<<" to iov closing time"<<std::endl;
+    Pedestals* myped=new Pedestals;
+    for(int ichannel=1; ichannel<=5; ++ichannel){
+      Pedestals::Item item;
+      item.m_mean=1.11*ichannel+currentTime;
+      item.m_variance=1.12*ichannel+currentTime;
+      myped->m_pedestals.push_back(item);
     }
+    mydbservice->newValidityForNewPayload<Pedestals>(myped,currentTime,callbackToken);
   }catch(const cond::Exception& er){
     std::cout<<er.what()<<std::endl;
   }catch(const std::exception& er){
