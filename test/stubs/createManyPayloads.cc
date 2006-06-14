@@ -31,7 +31,8 @@ createManyPayloads::analyze( const edm::Event& evt, const edm::EventSetup& evtSe
     if( mydbservice.isAvailable() ){
       try{
 	std::cout<<"current time "<<mydbservice->currentTime()<<std::endl;
-	mydbservice->newValidityForNewPayload<Pedestals>(myped,mydbservice->currentTime());
+	size_t callbackToken=mydbservice->callbackToken("Pedestals");
+	mydbservice->newValidityForNewPayload<Pedestals>(myped,mydbservice->currentTime(),callbackToken);
       }catch(const cond::Exception& er){
 	std::cout<<er.what()<<std::endl;
       }catch(const std::exception& er){

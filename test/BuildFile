@@ -15,3 +15,7 @@
 <library file=stubs/createManyPayloads.cc name=createManyPayloads>
   <flags SEAL_PLUGIN_NAME="createManyPayloads">
 </library>
+<library file=stubs/writeMultipleRecords.cc name=writeMultipleRecords>
+  <flags SEAL_PLUGIN_NAME="writeMultipleRecords">
+</library>
+		

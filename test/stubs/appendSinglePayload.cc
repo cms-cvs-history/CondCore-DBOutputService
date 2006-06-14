@@ -43,7 +43,8 @@ appendSinglePayload::endJob()
 	item.m_variance=1.12*ichannel+currentTime;
 	myped->m_pedestals.push_back(item);
       }
-      mydbservice->newValidityForNewPayload<Pedestals>(myped,currentTime);
+      size_t callbackToken=mydbservice->callbackToken("Pedestals");
+      mydbservice->newValidityForNewPayload<Pedestals>(myped,currentTime,callbackToken);
     }else{
       std::cout<<"Service is unavailable"<<std::endl;
     }

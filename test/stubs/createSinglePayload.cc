@@ -37,7 +37,8 @@ createSinglePayload::endJob()
   edm::Service<cond::service::PoolDBOutputService> mydbservice;
   if( mydbservice.isAvailable() ){
     try{
-      mydbservice->newValidityForNewPayload<Pedestals>(myped,mydbservice->endOfTime());
+      size_t callbackToken=mydbservice->callbackToken("Pedestals");
+      mydbservice->newValidityForNewPayload<Pedestals>(myped,mydbservice->endOfTime(), callbackToken);
     }catch(const cond::Exception& er){
       std::cout<<er.what()<<std::endl;
     }catch(const std::exception& er){

@@ -5,7 +5,10 @@
   <parameter name="user" value="" />
   <parameter name="password" value="" />
 </connection>
-
+<connection name="sqlite_file:mydata.db">
+  <parameter name="user" value="" />
+  <parameter name="password" value="" />
+</connection>
 <connection name="oracle://devdb10/CMS_XIEZHEN_DEV">
   <parameter name="user" value="CMS_XIEZHEN_DEV" />
   <parameter name="password" value="***" />
