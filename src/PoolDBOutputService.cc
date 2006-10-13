@@ -83,6 +83,22 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   m_iovService=new cond::IOVService(*m_session);
   m_session->setCatalog(catalogcontact);
 }
+cond::DBSession& cond::service::PoolDBOutputService::session() const{
+  return *m_session;
+}
+cond::IOVService& cond::service::PoolDBOutputService::iovService() const{
+  return *m_iovService;
+}
+cond::MetaData& cond::service::PoolDBOutputService::metadataService() const{
+  return *m_metadata;
+}
+std::string cond::service::PoolDBOutputService::tag( const std::string& EventSetupRecordName ){
+  return this->lookUpRecord(EventSetupRecordName).m_tag;
+}
+bool cond::service::PoolDBOutputService::isNewtag( const std::string& EventSetupRecordName ){
+  if(!m_dbstarted) this->initDB();
+  return this->lookUpRecord(EventSetupRecordName).m_isNewTag;
+}
 void 
 cond::service::PoolDBOutputService::initDB()
 {
@@ -184,6 +200,7 @@ void cond::service::PoolDBOutputService::insertIOV(cond::service::serviceCallbac
     std::string iovToken=record.m_iovEditor->token();
     if( record.m_isNewTag ){
       m_metadata->addMapping(record.m_tag,iovToken);
+      //record.m_isNewTag=false;
     }
 }
 cond::service::serviceCallbackRecord& cond::service::PoolDBOutputService::lookUpRecord(const std::string& EventSetupRecordName){

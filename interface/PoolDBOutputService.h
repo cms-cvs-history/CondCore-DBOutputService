@@ -20,13 +20,6 @@ namespace cond{
     class serviceCallbackToken;
     class PoolDBOutputService{
     public:
-      //
-      // accepted PSet 
-      // connect, connectMode, 
-      // authenticationMethod, containerName,payloadCustomMappingFile
-      // appendIOV, catalog,tag,
-      // loadBlobStreamer
-      //
       PoolDBOutputService( const edm::ParameterSet & iConfig, 
 			   edm::ActivityRegistry & iAR );
       //use these to control connections
@@ -40,15 +33,11 @@ namespace cond{
       //
       // return the database session in use
       //
-      cond::DBSession& session(){
-	return *m_session;
-      }
-      cond::IOVService& iovService(){
-	return *m_iovService;
-      }
-      cond::MetaData& metadataService(){
-	return *m_metadata;
-      }
+      cond::DBSession& session() const;
+      cond::IOVService& iovService() const;
+      cond::MetaData& metadataService() const;
+      std::string tag( const std::string& EventSetupRecordName );
+      bool isNewtag( const std::string& EventSetupRecordName );
       //
       // insert the payload and its valid till time into the database
       // Note: user looses the ownership of the pointer to the payloadObj
