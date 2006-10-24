@@ -1,21 +1,5 @@
 <use name=CondCore/DBOutputService>
 <use name=CondFormats/Calibration>
-<library file=stubs/createSinglePayload.cc name=createSinglePayload>
- <use name
-  <flags SEAL_PLUGIN_NAME="createSinglePayload">
+<library file=stubs/IOVPayloadAnalyzer.cc name=IOVPayloadAnalyze>
+  <flags SEAL_PLUGIN_NAME="IOVPayloadAnalyze">
 </library>
-<library file=stubs/appendSinglePayload.cc name=appendSinglePayload>
-  <use name=CondFormats/DataRecord>
-  <flags SEAL_PLUGIN_NAME="appendSinglePayload">
-</library>
-<library file=stubs/appendManyPayloads.cc name=appendManyPayloads>
-  <use name=CondFormats/DataRecord>
-  <flags SEAL_PLUGIN_NAME="appendManyPayloads">
-</library>
-<library file=stubs/createManyPayloads.cc name=createManyPayloads>
-  <flags SEAL_PLUGIN_NAME="createManyPayloads">
-</library>
-<library file=stubs/writeMultipleRecords.cc name=writeMultipleRecords>
-  <flags SEAL_PLUGIN_NAME="writeMultipleRecords">
-</library>
-		

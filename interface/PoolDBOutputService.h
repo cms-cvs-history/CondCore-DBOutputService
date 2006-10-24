@@ -3,6 +3,7 @@
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
 #include "CondCore/DBCommon/interface/DBSession.h"
 #include "CondCore/DBCommon/interface/Ref.h"
+#include "CondCore/MetaDataService/interface/MetaData.h"
 #include "serviceCallbackRecord.h"
 #include <string>
 #include <map>
@@ -13,7 +14,7 @@ namespace edm{
 }
 namespace cond{
   class ServiceLoader;
-  class MetaData;
+  //  class MetaData;
   class DBSession;
   class IOVService;
   namespace service {
@@ -37,47 +38,84 @@ namespace cond{
       cond::IOVService& iovService() const;
       cond::MetaData& metadataService() const;
       std::string tag( const std::string& EventSetupRecordName );
-      bool isNewtag( const std::string& EventSetupRecordName );
+      bool isNewTagRequest( const std::string& EventSetupRecordName );
       //
       // insert the payload and its valid till time into the database
       // Note: user looses the ownership of the pointer to the payloadObj
       // The payload object will be stored as well
       // 
       template<typename T>
-	void buildNewIOV( T* payloadObj, 
-			  unsigned long long tillTime,
-			  const std::string& EventSetupRecordName ){
+	void createNewIOV( T* firstPayloadObj, 
+			   unsigned long long firstTillTime,
+			   const std::string& EventSetupRecordName
+			   ){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
 	if (!m_dbstarted) this->initDB();
+	m_session->startUpdateTransaction();    
+	cond::Ref<T> myPayload(*m_session,firstPayloadObj);
+	myPayload.markWrite(EventSetupRecordName);
+	std::string payloadToken=myPayload.token();
+	std::string iovToken=this->insertIOV(myrecord,payloadToken,firstTillTime,EventSetupRecordName);
+	m_session->commit();
+	m_metadata->connect();
+	m_metadata->addMapping(myrecord.m_tag,iovToken);
+	m_metadata->disconnect();
+	myrecord.m_isNewTag=false;
+      }
+      void createNewIOV( const std::string& firstPayloadToken, 
+			unsigned long long firstTillTime,
+			const std::string& EventSetupRecordName );
+      template<typename T>
+	void appendTillTime( T* payloadObj, 
+			     unsigned long long tillTime,
+			     const std::string& EventSetupRecordName
+			     ){
+	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
+	if (!m_dbstarted) this->initDB();
+	m_session->startUpdateTransaction();    
 	cond::Ref<T> myPayload(*m_session,payloadObj);
 	myPayload.markWrite(EventSetupRecordName);
 	std::string payloadToken=myPayload.token();
-	this->insertIOV(payloadToken,tillTime,EventSetupRecordName);
+	std::string iovToken=this->insertIOV(myrecord,payloadToken,tillTime,EventSetupRecordName);
+	m_session->commit();    
       }
-      void buildNewIOV( const std::string& payloadToken, 
-			unsigned long long tillTime,
-			const std::string& EventSetupRecordName );
+      void appendTillTime( const std::string& payloadToken, 
+			   unsigned long long tillTime,
+			   const std::string& EventSetupRecordName
+			    );
+      
+      template<typename T>
+	void appendSinceTime( T* payloadObj, 
+			      unsigned long long sinceTime,
+			      const std::string& EventSetupRecordName ){
+	std::cout<<"appendSinceTime"<<std::endl;
+	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
+	std::cout<<"got record "<<EventSetupRecordName<<std::endl;
+	if (!m_dbstarted) this->initDB();
+	std::cout<<"start again transaction"<<std::endl;
+	m_session->startUpdateTransaction();    
+	std::cout<<"transaction started"<<std::endl;
+	cond::Ref<T> myPayload(*m_session,payloadObj);
+	std::cout<<"got ref "<<myPayload.token()<<std::endl;
+	std::cout<<"markWrite to "<<EventSetupRecordName<<std::endl;
+	myPayload.markWrite(EventSetupRecordName);
+	std::cout<<"markWrite to "<<EventSetupRecordName<<std::endl;
+	std::string payloadToken=myPayload.token();
+	std::cout<<"got token "<<payloadToken<<std::endl;
+	this->appendIOV(myrecord,payloadToken,sinceTime);
+	std::cout<<"about to commit"<<std::endl;
+	m_session->commit();    
+      }
       //
       // Append the payload and its valid sinceTime into the database
       // Note: user looses the ownership of the pointer to the payloadObj
       // Note: the iov index appended to MUST pre-existing and the existing 
       // conditions data are retrieved from EventSetup 
       // 
-      template<typename T>
-	void extendOldIOV( T* payloadObj, 
+      void appendSinceTime( const std::string& payloadToken, 
 			   unsigned long long sinceTime,
-			   const std::string& EventSetupRecordName ){
-	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
-	if (!m_dbstarted) this->initDB();
-	cond::Ref<T> myPayload(*m_session,payloadObj);
-	myPayload.markWrite(EventSetupRecordName);
-	std::string payloadToken=myPayload.token();
-	this->appendIOV(myrecord,payloadToken,sinceTime);
-      }
-      
-      void extendOldIOV( const std::string& payloadToken, 
-			 unsigned long long sinceTime,
-			 const std::string& EventSetupRecordName );
+			   const std::string& EventSetupRecordName );
+
       //
       // Service time utility callback method 
       // return the infinity value according to the given timetype
@@ -99,7 +137,7 @@ namespace cond{
       void appendIOV(cond::service::serviceCallbackRecord& record,
 		     const std::string& payloadToken, 
 		     unsigned long long sinceTime);
-      void insertIOV(cond::service::serviceCallbackRecord& record,
+      std::string insertIOV(cond::service::serviceCallbackRecord& record,
 		     const std::string& payloadToken, 
 		     unsigned long long tillTime, const std::string& EventSetupRecordName);
       serviceCallbackRecord& lookUpRecord(const std::string& EventSetupRecordName);
