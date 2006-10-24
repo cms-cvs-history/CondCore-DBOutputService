@@ -11,7 +11,7 @@
 </connection>
 <connection name="oracle://devdb10/CMS_XIEZHEN_DEV">
   <parameter name="user" value="CMS_XIEZHEN_DEV" />
-  <parameter name="password" value="***" />
+  <parameter name="password" value="chilema123" />
 </connection>
 
 </connectionlist>
