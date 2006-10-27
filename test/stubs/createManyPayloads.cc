@@ -47,4 +47,4 @@ createManyPayloads::analyze( const edm::Event& evt, const edm::EventSetup& evtSe
 }
 
 #include "FWCore/Framework/interface/MakerMacros.h"
-DEFINE_FWK_MODULE(createManyPayloads)
+DEFINE_FWK_MODULE(createManyPayloads);

@@ -51,4 +51,4 @@ createSinglePayload::endJob()
   }
 }
 #include "FWCore/Framework/interface/MakerMacros.h"
-DEFINE_FWK_MODULE(createSinglePayload)
+DEFINE_FWK_MODULE(createSinglePayload);
