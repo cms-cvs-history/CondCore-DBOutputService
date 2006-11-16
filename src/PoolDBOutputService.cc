@@ -7,6 +7,8 @@
 #include "CondCore/MetaDataService/interface/MetaData.h"
 #include "CondCore/DBCommon/interface/PoolStorageManager.h"
 #include "CondCore/DBCommon/interface/RelationalStorageManager.h"
+#include "CondCore/DBCommon/interface/ConnectionConfiguration.h"
+#include "CondCore/DBCommon/interface/SessionConfiguration.h"
 #include "CondCore/IOVService/interface/IOVService.h"
 #include "CondCore/IOVService/interface/IOVEditor.h"
 #include "CondCore/DBCommon/interface/AuthenticationMethod.h"
@@ -18,9 +20,7 @@
 #include <iostream>
 #include <vector>
 cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet & iConfig,edm::ActivityRegistry & iAR ): 
-  m_connect( iConfig.getParameter< std::string > ("connect") ),
   m_timetype( iConfig.getParameter< std::string >("timetype") ),
-  m_catalog( iConfig.getParameter< std::string >("catalog") ),
   m_endOfTime( 0 ),
   m_currentTime( 0 ),
   m_session( 0 ),
@@ -33,26 +33,61 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   }else{
     m_endOfTime=edm::IOVSyncValue::endOfTime().time().value();
   }
-  std::string catalogcontact=iConfig.getUntrackedParameter< std::string >("catalog","");
-  bool loadBlobStreamer=iConfig.getUntrackedParameter< bool >("loadBlobStreamer",false);
-  unsigned int authenticationMethod=iConfig.getUntrackedParameter< unsigned int >("authenticationMethod",0);
-  unsigned int messageLevel=iConfig.getUntrackedParameter<unsigned int>("messagelevel",0);
+  edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters");  
   typedef std::vector< edm::ParameterSet > Parameters;
   Parameters toPut=iConfig.getParameter<Parameters>("toPut");
   for(Parameters::iterator itToPut = toPut.begin(); itToPut != toPut.end(); ++itToPut) {
     cond::service::serviceCallbackRecord thisrecord;
-    ///fix me!
     thisrecord.m_containerName = itToPut->getParameter<std::string>("record");
     thisrecord.m_tag = itToPut->getParameter<std::string>("tag");
     m_callbacks.insert(std::make_pair(cond::service::serviceCallbackToken::build(thisrecord.m_containerName),thisrecord));
   }
   iAR.watchPreProcessEvent(this,&cond::service::PoolDBOutputService::preEventProcessing);
   iAR.watchPostEndJob(this,&cond::service::PoolDBOutputService::postEndJob);
-  m_session=new cond::DBSession(m_connect);
-  /*do something...
-    m_session->connectionConfiguration();
-    m_session->sessionConfiguration();
-  */
+  std::string connect=connectionPset.getParameter<std::string>("connect");
+  m_session=new cond::DBSession(connect);
+  m_catalog=connectionPset.getUntrackedParameter<std::string>("catalog","file::PoolFileCatalog.xml");
+  std::string authMethod=connectionPset.getUntrackedParameter<std::string>("authenticationMethod","XML");
+  int messageLevel=connectionPset.getUntrackedParameter<int>("messageLevel",0);
+  bool enableConnectionSharing=connectionPset.getUntrackedParameter<bool>("enableConnectionSharing",true);
+  int connectionTimeOut=connectionPset.getUntrackedParameter<int>("connectionTimeOut",600);
+  bool enableReadOnlySessionOnUpdateConnection=connectionPset.getUntrackedParameter<bool>("enableReadOnlySessionOnUpdateConnection",true);
+  bool loadBlobStreamer=connectionPset.getUntrackedParameter<bool>("loadBlobStreamer",false);
+  int connectionRetrialPeriod=connectionPset.getUntrackedParameter<int>("connectionRetrialPeriod",30);
+  int connectionRetrialTimeOut=connectionPset.getUntrackedParameter<int>("connectionRetrialTimeOut",180);
+  if(authMethod=="ENV"||authMethod=="Env"){
+    m_session->sessionConfiguration().setAuthenticationMethod(cond::Env);
+  }else{
+    m_session->sessionConfiguration().setAuthenticationMethod(cond::XML);
+  }  
+  switch (messageLevel) {
+  case 0 :
+    m_session->sessionConfiguration().setMessageLevel( cond::Error );
+      break;    
+  case 1:
+    m_session->sessionConfiguration().setMessageLevel( cond::Warning );
+    break;
+  case 2:
+    m_session->sessionConfiguration().setMessageLevel( cond::Info );
+    break;
+  case 3:
+    m_session->sessionConfiguration().setMessageLevel( cond::Debug );
+    break;  
+  default:
+    m_session->sessionConfiguration().setMessageLevel( cond::Error );
+  }
+  if(enableConnectionSharing){
+    m_session->connectionConfiguration().enableConnectionSharing();
+  }
+  m_session->connectionConfiguration().setConnectionTimeOut(connectionTimeOut);
+  if(enableReadOnlySessionOnUpdateConnection){
+    m_session->connectionConfiguration().enableReadOnlySessionOnUpdateConnections();
+  }
+  if(loadBlobStreamer){
+    m_session->sessionConfiguration().setBlobStreamer("");
+  }
+  m_session->connectionConfiguration().setConnectionRetrialPeriod(connectionRetrialPeriod);
+  m_session->connectionConfiguration().setConnectionRetrialTimeOut(connectionRetrialTimeOut);
 }
 
 std::string cond::service::PoolDBOutputService::tag( const std::string& EventSetupRecordName ){
@@ -67,7 +102,7 @@ void
 cond::service::PoolDBOutputService::initDB()
 {
   if(m_dbstarted) return;
-  std::cout<<"initDB"<<std::endl;
+  m_session->open(true);
   m_pooldb=&(m_session->poolStorageManager(m_catalog));
   m_coraldb=&(m_session->relationalStorageManager());
   try{
@@ -101,6 +136,7 @@ cond::service::PoolDBOutputService::postEndJob()
 {
   /*dummy
    */
+  if(m_dbstarted) m_session->close();
 }
 void 
 cond::service::PoolDBOutputService::preEventProcessing(const edm::EventID& iEvtid, const edm::Timestamp& iTime)
@@ -168,9 +204,9 @@ void cond::service::PoolDBOutputService::appendIOV(cond::service::serviceCallbac
   record.m_iovEditor->append(payloadToken,sinceTime);
 }
 std::string cond::service::PoolDBOutputService::insertIOV(cond::service::serviceCallbackRecord& record, const std::string& payloadToken, unsigned long long tillTime, const std::string& EventSetupRecordName){
-  std::cout<<"insertIOV payloadToken"<<payloadToken<<std::endl;
-  std::cout<<"tillTime "<<tillTime<<std::endl;
-  std::cout<<"record "<<EventSetupRecordName<<std::endl;
+  //std::cout<<"insertIOV payloadToken"<<payloadToken<<std::endl;
+  //std::cout<<"tillTime "<<tillTime<<std::endl;
+  //std::cout<<"record "<<EventSetupRecordName<<std::endl;
   record.m_iovEditor->insert(payloadToken,tillTime);
   std::string iovToken=record.m_iovEditor->token();
   return iovToken;

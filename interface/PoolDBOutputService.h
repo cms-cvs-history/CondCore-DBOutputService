@@ -146,7 +146,7 @@ namespace cond{
 			    unsigned long long tillTime, const std::string& EventSetupRecordName);
       serviceCallbackRecord& lookUpRecord(const std::string& EventSetupRecordName);
     private:
-      std::string m_connect;
+      //std::string m_connect;
       std::string m_timetype;
       std::string m_catalog;
       unsigned long long m_endOfTime;
@@ -156,6 +156,7 @@ namespace cond{
       cond::RelationalStorageManager* m_coraldb;
       std::map<size_t, cond::service::serviceCallbackRecord> m_callbacks;
       bool m_dbstarted;
+      //edm::ParameterSet m_connectionPset;
     };//PoolDBOutputService
   }//ns service
 }//ns cond
