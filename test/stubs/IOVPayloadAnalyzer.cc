@@ -38,7 +38,7 @@ void IOVPayloadAnalyzer::analyze( const edm::Event& evt, const edm::EventSetup& 
       if( mydbservice->isNewTagRequest(m_record) ){
 	//create mode
 	std::cout<<"creating"<<std::endl;
-	unsigned long long firstTillTime=mydbservice->endOfTime();
+	cond::Time_t firstTillTime=mydbservice->endOfTime();
 	mydbservice->createNewIOV<Pedestals>(myped,firstTillTime,m_record);
 	std::cout<<"created"<<std::endl;
       }else{
