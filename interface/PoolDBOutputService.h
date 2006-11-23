@@ -5,7 +5,7 @@
 #include "CondCore/DBCommon/interface/PoolStorageManager.h"
 #include "CondCore/DBCommon/interface/RelationalStorageManager.h"
 #include "CondCore/DBCommon/interface/Ref.h"
-//#include "CondCore/IOVService/interface/IOVService.h"
+#include "CondCore/DBCommon/interface/Time.h"
 #include "CondCore/MetaDataService/interface/MetaData.h"
 #include "serviceCallbackRecord.h"
 #include <string>
@@ -43,7 +43,7 @@ namespace cond{
       // 
       template<typename T>
 	void createNewIOV( T* firstPayloadObj, 
-			   unsigned long long firstTillTime,
+			   cond::Time_t firstTillTime,
 			   const std::string& EventSetupRecordName
 			   ){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
@@ -65,11 +65,11 @@ namespace cond{
 	myrecord.m_isNewTag=false;
       }
       void createNewIOV( const std::string& firstPayloadToken, 
-			unsigned long long firstTillTime,
+			cond::Time_t firstTillTime,
 			const std::string& EventSetupRecordName );
       template<typename T>
 	void appendTillTime( T* payloadObj, 
-			     unsigned long long tillTime,
+			     cond::Time_t tillTime,
 			     const std::string& EventSetupRecordName
 			     ){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
@@ -84,13 +84,13 @@ namespace cond{
 	m_pooldb->disconnect();
       }
       void appendTillTime( const std::string& payloadToken, 
-			   unsigned long long tillTime,
+			   cond::Time_t tillTime,
 			   const std::string& EventSetupRecordName
 			    );
       
       template<typename T>
 	void appendSinceTime( T* payloadObj, 
-			      unsigned long long sinceTime,
+			      cond::Time_t sinceTime,
 			      const std::string& EventSetupRecordName ){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
 	std::cout<<"got record "<<EventSetupRecordName<<std::endl;
@@ -117,7 +117,7 @@ namespace cond{
       // conditions data are retrieved from EventSetup 
       // 
       void appendSinceTime( const std::string& payloadToken, 
-			   unsigned long long sinceTime,
+			   cond::Time_t sinceTime,
 			   const std::string& EventSetupRecordName );
 
       //
@@ -125,13 +125,13 @@ namespace cond{
       // return the infinity value according to the given timetype
       // It is the IOV closing boundary
       //
-      unsigned long long endOfTime() const;
+      cond::Time_t endOfTime() const;
       //
       // Service time utility callback method 
       // return the current conditions time value according to the 
       // given timetype
       //
-      unsigned long long currentTime() const;
+      cond::Time_t currentTime() const;
       virtual ~PoolDBOutputService();
     private:
       void connect();    
@@ -140,17 +140,17 @@ namespace cond{
       size_t callbackToken(const std::string& EventSetupRecordName ) const ;
       void appendIOV(cond::service::serviceCallbackRecord& record,
 		     const std::string& payloadToken, 
-		     unsigned long long sinceTime);
+		     cond::Time_t sinceTime);
       std::string insertIOV(cond::service::serviceCallbackRecord& record,
 			    const std::string& payloadToken, 
-			    unsigned long long tillTime, const std::string& EventSetupRecordName);
+			    cond::Time_t tillTime, const std::string& EventSetupRecordName);
       serviceCallbackRecord& lookUpRecord(const std::string& EventSetupRecordName);
     private:
       //std::string m_connect;
       std::string m_timetype;
       std::string m_catalog;
-      unsigned long long m_endOfTime;
-      unsigned long long m_currentTime;
+      cond::Time_t m_endOfTime;
+      cond::Time_t m_currentTime;
       cond::DBSession* m_session;
       cond::PoolStorageManager* m_pooldb;
       cond::RelationalStorageManager* m_coraldb;

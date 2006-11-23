@@ -29,7 +29,7 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   m_dbstarted( false )
 {
   if( m_timetype=="runnumber" ){
-    m_endOfTime=(unsigned long long)edm::IOVSyncValue::endOfTime().eventID().run();
+    m_endOfTime=(cond::Time_t)edm::IOVSyncValue::endOfTime().eventID().run();
   }else{
     m_endOfTime=edm::IOVSyncValue::endOfTime().time().value();
   }
@@ -160,13 +160,13 @@ cond::service::PoolDBOutputService::~PoolDBOutputService(){
 size_t cond::service::PoolDBOutputService::callbackToken(const std::string& EventSetupRecordName ) const {
   return cond::service::serviceCallbackToken::build(EventSetupRecordName);
 }
-unsigned long long cond::service::PoolDBOutputService::endOfTime() const{
+cond::Time_t cond::service::PoolDBOutputService::endOfTime() const{
   return m_endOfTime;
 }
-unsigned long long cond::service::PoolDBOutputService::currentTime() const{
+cond::Time_t cond::service::PoolDBOutputService::currentTime() const{
   return m_currentTime;
 }
-void cond::service::PoolDBOutputService::createNewIOV( const std::string& firstPayloadToken, unsigned long long firstTillTime,const std::string& EventSetupRecordName){
+void cond::service::PoolDBOutputService::createNewIOV( const std::string& firstPayloadToken, cond::Time_t firstTillTime,const std::string& EventSetupRecordName){
   cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
   if (!m_dbstarted) this->initDB();
   std::string iovToken=this->insertIOV(myrecord,firstPayloadToken,firstTillTime,EventSetupRecordName);
@@ -178,10 +178,7 @@ void cond::service::PoolDBOutputService::createNewIOV( const std::string& firstP
   m_coraldb->disconnect();
   myrecord.m_isNewTag=false;
 }
-void cond::service::PoolDBOutputService::appendTillTime( const std::string& payloadToken, 
-		     unsigned long long tillTime,
-		     const std::string& EventSetupRecordName
-		     ){
+void cond::service::PoolDBOutputService::appendTillTime( const std::string& payloadToken, cond::Time_t tillTime,const std::string& EventSetupRecordName){
   cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
   if (!m_dbstarted) this->initDB();
   m_pooldb->connect(cond::ReadWrite);
@@ -190,7 +187,7 @@ void cond::service::PoolDBOutputService::appendTillTime( const std::string& payl
   m_pooldb->commit();    
   m_pooldb->disconnect();
 }
-void cond::service::PoolDBOutputService::appendSinceTime( const std::string& payloadToken, unsigned long long sinceTime,const std::string& EventSetupRecordName ){
+void cond::service::PoolDBOutputService::appendSinceTime( const std::string& payloadToken, cond::Time_t sinceTime,const std::string& EventSetupRecordName ){
   cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
   if (!m_dbstarted) this->initDB();
   m_pooldb->connect(cond::ReadWrite);
@@ -199,11 +196,11 @@ void cond::service::PoolDBOutputService::appendSinceTime( const std::string& pay
   m_pooldb->commit();    
   m_pooldb->disconnect();
 }
-void cond::service::PoolDBOutputService::appendIOV(cond::service::serviceCallbackRecord& record, const std::string& payloadToken, unsigned long long sinceTime){
+void cond::service::PoolDBOutputService::appendIOV(cond::service::serviceCallbackRecord& record, const std::string& payloadToken, cond::Time_t sinceTime){
   // if( record.m_isNewTag ) throw cond::Exception(std::string("PoolDBOutputService::appendIOV: cannot append to non-existing tag ")+record.m_tag );  
   record.m_iovEditor->append(payloadToken,sinceTime);
 }
-std::string cond::service::PoolDBOutputService::insertIOV(cond::service::serviceCallbackRecord& record, const std::string& payloadToken, unsigned long long tillTime, const std::string& EventSetupRecordName){
+std::string cond::service::PoolDBOutputService::insertIOV(cond::service::serviceCallbackRecord& record, const std::string& payloadToken, cond::Time_t tillTime, const std::string& EventSetupRecordName){
   //std::cout<<"insertIOV payloadToken"<<payloadToken<<std::endl;
   //std::cout<<"tillTime "<<tillTime<<std::endl;
   //std::cout<<"record "<<EventSetupRecordName<<std::endl;
