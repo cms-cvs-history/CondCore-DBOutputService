@@ -48,7 +48,7 @@ namespace cond{
 			   ){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
 	if (!m_dbstarted) this->initDB();
-	m_pooldb->connect(cond::ReadWriteCreate);
+	m_pooldb->connect();
 	m_pooldb->startTransaction(false);    
 	cond::Ref<T> myPayload(*m_pooldb,firstPayloadObj);
 	myPayload.markWrite(EventSetupRecordName);
@@ -74,7 +74,7 @@ namespace cond{
 			     ){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
 	if (!m_dbstarted) this->initDB();
-	m_pooldb->connect(cond::ReadWriteCreate);
+	m_pooldb->connect();
 	m_pooldb->startTransaction(false);    
 	cond::Ref<T> myPayload(*m_pooldb,payloadObj);
 	myPayload.markWrite(EventSetupRecordName);
@@ -93,10 +93,8 @@ namespace cond{
 			      cond::Time_t sinceTime,
 			      const std::string& EventSetupRecordName ){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
-	std::cout<<"got record "<<EventSetupRecordName<<std::endl;
 	if (!m_dbstarted) this->initDB();
-	std::cout<<"start again transaction"<<std::endl;
-	m_pooldb->connect(cond::ReadWriteCreate);
+	m_pooldb->connect();
 	m_pooldb->startTransaction(false);    
 	cond::Ref<T> myPayload(*m_pooldb,payloadObj);
 	std::cout<<"got ref "<<myPayload.token()<<std::endl;

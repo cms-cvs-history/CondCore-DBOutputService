@@ -142,7 +142,7 @@ void cond::service::PoolDBOutputService::createNewIOV( const std::string& firstP
 void cond::service::PoolDBOutputService::appendTillTime( const std::string& payloadToken, cond::Time_t tillTime,const std::string& EventSetupRecordName){
   cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
   if (!m_dbstarted) this->initDB();
-  m_pooldb->connect(cond::ReadWrite);
+  m_pooldb->connect();
   m_pooldb->startTransaction(false);    
   this->insertIOV(myrecord,payloadToken,tillTime,EventSetupRecordName);
   m_pooldb->commit();    
@@ -151,7 +151,7 @@ void cond::service::PoolDBOutputService::appendTillTime( const std::string& payl
 void cond::service::PoolDBOutputService::appendSinceTime( const std::string& payloadToken, cond::Time_t sinceTime,const std::string& EventSetupRecordName ){
   cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
   if (!m_dbstarted) this->initDB();
-  m_pooldb->connect(cond::ReadWrite);
+  m_pooldb->connect();
   m_pooldb->startTransaction(false);    
   this->appendIOV(myrecord,payloadToken,sinceTime);
   m_pooldb->commit();    
@@ -159,13 +159,13 @@ void cond::service::PoolDBOutputService::appendSinceTime( const std::string& pay
 }
 void cond::service::PoolDBOutputService::appendIOV(cond::service::serviceCallbackRecord& record, const std::string& payloadToken, cond::Time_t sinceTime){
   // if( record.m_isNewTag ) throw cond::Exception(std::string("PoolDBOutputService::appendIOV: cannot append to non-existing tag ")+record.m_tag );  
-  record.m_iovEditor->append(payloadToken,sinceTime);
+  record.m_iovEditor->append(sinceTime,payloadToken);
 }
 std::string cond::service::PoolDBOutputService::insertIOV(cond::service::serviceCallbackRecord& record, const std::string& payloadToken, cond::Time_t tillTime, const std::string& EventSetupRecordName){
   //std::cout<<"insertIOV payloadToken"<<payloadToken<<std::endl;
   //std::cout<<"tillTime "<<tillTime<<std::endl;
   //std::cout<<"record "<<EventSetupRecordName<<std::endl;
-  record.m_iovEditor->insert(payloadToken,tillTime);
+  record.m_iovEditor->insert(tillTime,payloadToken);
   std::string iovToken=record.m_iovEditor->token();
   return iovToken;
 }
