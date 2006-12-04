@@ -35,16 +35,12 @@ void IOVPayloadAnalyzer::analyze( const edm::Event& evt, const edm::EventSetup& 
       myped->m_pedestals.push_back(item);
     }
     if( mydbservice->isNewTagRequest(m_record) ){
-	//create mode
-      std::cout<<"creating"<<std::endl;
+      //create mode
       cond::Time_t firstTillTime=mydbservice->endOfTime();
       mydbservice->createNewIOV<Pedestals>(myped,firstTillTime,m_record);
-      std::cout<<"created"<<std::endl;
     }else{
       //append mode. Note: correct PoolDBESSource must be loaded
-      std::cout<<"appending"<<std::endl;
-	mydbservice->appendSinceTime<Pedestals>(myped,mydbservice->currentTime(),m_record);
-	std::cout<<"done"<<std::endl;
+      mydbservice->appendSinceTime<Pedestals>(myped,mydbservice->currentTime(),m_record);
     }
   }catch(const cond::Exception& er){
     std::cout<<er.what()<<std::endl;
