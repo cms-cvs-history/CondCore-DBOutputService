@@ -17,11 +17,9 @@
 #include "CondCore/DBCommon/interface/ConfigSessionFromParameterSet.h"
 #include "CondCore/DBOutputService/interface/Exception.h"
 #include "serviceCallbackToken.h"
-#include <iostream>
+//#include <iostream>
 #include <vector>
 cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet & iConfig,edm::ActivityRegistry & iAR ): 
-  //  m_timetype( iConfig.getParameter< std::string >("timetype") ),
-  //m_endOfTime( 0 ),
   m_currentTime( 0 ),
   m_session( 0 ),
   m_iovservice( 0 ),
@@ -31,18 +29,18 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
 {
   std::string connect=iConfig.getParameter<std::string>("connect");
   m_session=new cond::DBSession(connect);
-  m_session->open(true);
   std::string catconnect=iConfig.getUntrackedParameter<std::string>("catalog","file::PoolFileCatalog.xml");
+  std::string timetype=iConfig.getParameter< std::string >("timetype");
+  edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
+  ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
+  m_session->open(true);
   m_pooldb=&(m_session->poolStorageManager(catconnect));
   m_coraldb=&(m_session->relationalStorageManager());
-  std::string timetype=iConfig.getParameter< std::string >("timetype");
   if( timetype=="timestamp" ){
     m_iovservice=new cond::IOVService(*m_pooldb,cond::timestamp);
   }else{
     m_iovservice=new cond::IOVService(*m_pooldb,cond::runnumber);
   }
-  edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
-  ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
   typedef std::vector< edm::ParameterSet > Parameters;
   Parameters toPut=iConfig.getParameter<Parameters>("toPut");
   for(Parameters::iterator itToPut = toPut.begin(); itToPut != toPut.end(); ++itToPut) {
@@ -67,7 +65,6 @@ void
 cond::service::PoolDBOutputService::initDB()
 {
   if(m_dbstarted) return;
-  //m_session->open(true);
   try{
     cond::MetaData metadata(*m_coraldb);
     m_coraldb->connect(cond::ReadWriteCreate);
