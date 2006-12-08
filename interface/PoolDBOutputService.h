@@ -2,6 +2,7 @@
 #define CondCore_PoolDBOutputService_h
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
 #include "CondCore/DBCommon/interface/DBSession.h"
+#include "CondCore/IOVService/interface/IOVService.h"
 #include "CondCore/DBCommon/interface/PoolStorageManager.h"
 #include "CondCore/DBCommon/interface/RelationalStorageManager.h"
 #include "CondCore/DBCommon/interface/Ref.h"
@@ -97,14 +98,9 @@ namespace cond{
 	m_pooldb->connect();
 	m_pooldb->startTransaction(false);    
 	cond::Ref<T> myPayload(*m_pooldb,payloadObj);
-	std::cout<<"got ref "<<myPayload.token()<<std::endl;
-	std::cout<<"markWrite to "<<EventSetupRecordName<<std::endl;
 	myPayload.markWrite(EventSetupRecordName);
-	std::cout<<"markWrite to "<<EventSetupRecordName<<std::endl;
 	std::string payloadToken=myPayload.token();
-	std::cout<<"got token "<<payloadToken<<std::endl;
 	this->appendIOV(myrecord,payloadToken,sinceTime);
-	std::cout<<"about to commit"<<std::endl;
 	m_pooldb->commit();
 	m_pooldb->disconnect();
       }
@@ -145,11 +141,12 @@ namespace cond{
       serviceCallbackRecord& lookUpRecord(const std::string& EventSetupRecordName);
     private:
       //std::string m_connect;
-      std::string m_timetype;
-      std::string m_catalog;
-      cond::Time_t m_endOfTime;
+      //std::string m_timetype;
+      //std::string m_catalog;
+      //cond::Time_t m_endOfTime;
       cond::Time_t m_currentTime;
       cond::DBSession* m_session;
+      cond::IOVService* m_iovservice;
       cond::PoolStorageManager* m_pooldb;
       cond::RelationalStorageManager* m_coraldb;
       std::map<size_t, cond::service::serviceCallbackRecord> m_callbacks;

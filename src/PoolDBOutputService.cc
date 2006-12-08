@@ -7,36 +7,40 @@
 #include "CondCore/MetaDataService/interface/MetaData.h"
 #include "CondCore/DBCommon/interface/PoolStorageManager.h"
 #include "CondCore/DBCommon/interface/RelationalStorageManager.h"
-//#include "CondCore/DBCommon/interface/ConnectionConfiguration.h"
-//#include "CondCore/DBCommon/interface/SessionConfiguration.h"
 #include "CondCore/IOVService/interface/IOVService.h"
 #include "CondCore/IOVService/interface/IOVEditor.h"
 #include "CondCore/DBCommon/interface/AuthenticationMethod.h"
 #include "CondCore/DBCommon/interface/ConnectMode.h"
 #include "CondCore/DBCommon/interface/MessageLevel.h"
 #include "CondCore/DBCommon/interface/Exception.h"
+//#include "CondCore/DBCommon/interface/Time.h"
 #include "CondCore/DBCommon/interface/ConfigSessionFromParameterSet.h"
 #include "CondCore/DBOutputService/interface/Exception.h"
 #include "serviceCallbackToken.h"
 #include <iostream>
 #include <vector>
 cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet & iConfig,edm::ActivityRegistry & iAR ): 
-  m_timetype( iConfig.getParameter< std::string >("timetype") ),
-  m_endOfTime( 0 ),
+  //  m_timetype( iConfig.getParameter< std::string >("timetype") ),
+  //m_endOfTime( 0 ),
   m_currentTime( 0 ),
   m_session( 0 ),
+  m_iovservice( 0 ),
   m_pooldb( 0 ),
   m_coraldb( 0 ),
   m_dbstarted( false )
 {
-  if( m_timetype=="runnumber" ){
-    m_endOfTime=(cond::Time_t)edm::IOVSyncValue::endOfTime().eventID().run();
-  }else{
-    m_endOfTime=edm::IOVSyncValue::endOfTime().time().value();
-  }
   std::string connect=iConfig.getParameter<std::string>("connect");
   m_session=new cond::DBSession(connect);
-  m_catalog=iConfig.getUntrackedParameter<std::string>("catalog","file::PoolFileCatalog.xml");
+  m_session->open(true);
+  std::string catconnect=iConfig.getUntrackedParameter<std::string>("catalog","file::PoolFileCatalog.xml");
+  m_pooldb=&(m_session->poolStorageManager(catconnect));
+  m_coraldb=&(m_session->relationalStorageManager());
+  std::string timetype=iConfig.getParameter< std::string >("timetype");
+  if( timetype=="timestamp" ){
+    m_iovservice=new cond::IOVService(*m_pooldb,cond::timestamp);
+  }else{
+    m_iovservice=new cond::IOVService(*m_pooldb,cond::runnumber);
+  }
   edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
   ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
   typedef std::vector< edm::ParameterSet > Parameters;
@@ -63,12 +67,9 @@ void
 cond::service::PoolDBOutputService::initDB()
 {
   if(m_dbstarted) return;
-  m_session->open(true);
-  m_pooldb=&(m_session->poolStorageManager(m_catalog));
-  m_coraldb=&(m_session->relationalStorageManager());
+  //m_session->open(true);
   try{
     cond::MetaData metadata(*m_coraldb);
-    cond::IOVService iovservice(*m_pooldb);
     m_coraldb->connect(cond::ReadWriteCreate);
     m_coraldb->startTransaction(true);
     for(std::map<size_t,cond::service::serviceCallbackRecord>::iterator it=m_callbacks.begin(); it!=m_callbacks.end(); ++it){
@@ -79,7 +80,7 @@ cond::service::PoolDBOutputService::initDB()
 	iovtoken=metadata.getToken(it->second.m_tag);
 	it->second.m_isNewTag=false;
       }
-      it->second.m_iovEditor=iovservice.newIOVEditor(iovtoken);
+      it->second.m_iovEditor=m_iovservice->newIOVEditor(iovtoken);
     }
     m_coraldb->commit();
     m_coraldb->disconnect();
@@ -102,7 +103,7 @@ cond::service::PoolDBOutputService::postEndJob()
 void 
 cond::service::PoolDBOutputService::preEventProcessing(const edm::EventID& iEvtid, const edm::Timestamp& iTime)
 {
-  if( m_timetype=="runnumber" ){
+  if( m_iovservice->timeType() == cond::runnumber ){
     m_currentTime=iEvtid.run();
   }else{ //timestamp
     m_currentTime=iTime.value();
@@ -116,13 +117,14 @@ cond::service::PoolDBOutputService::~PoolDBOutputService(){
     }
   }
   m_callbacks.clear();
+  delete m_iovservice;
   delete m_session;
 }
 size_t cond::service::PoolDBOutputService::callbackToken(const std::string& EventSetupRecordName ) const {
   return cond::service::serviceCallbackToken::build(EventSetupRecordName);
 }
 cond::Time_t cond::service::PoolDBOutputService::endOfTime() const{
-  return m_endOfTime;
+  return m_iovservice->globalTill();
 }
 cond::Time_t cond::service::PoolDBOutputService::currentTime() const{
   return m_currentTime;
