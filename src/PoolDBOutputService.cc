@@ -28,14 +28,14 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   m_dbstarted( false )
 {
   std::string connect=iConfig.getParameter<std::string>("connect");
-  m_session=new cond::DBSession(connect);
+  m_session=new cond::DBSession(true);
   std::string catconnect=iConfig.getUntrackedParameter<std::string>("catalog","file::PoolFileCatalog.xml");
   std::string timetype=iConfig.getParameter< std::string >("timetype");
   edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
   ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
-  m_session->open(true);
-  m_pooldb=&(m_session->poolStorageManager(catconnect));
-  m_coraldb=&(m_session->relationalStorageManager());
+  m_session->open();
+  m_pooldb=new cond::PoolStorageManager(connect,catconnect,m_session);
+  m_coraldb=new cond::RelationalStorageManager(connect);
   if( timetype=="timestamp" ){
     m_iovservice=new cond::IOVService(*m_pooldb,cond::timestamp);
   }else{
