@@ -1,0 +1,8 @@
+<use name=CondCore/DBOutputService>
+<use name=CondFormats/Calibration>
+<library file=stubs/IOVPayloadAnalyzer.cc name=IOVPayloadAnalyze>
+  <flags SEAL_PLUGIN_NAME="IOVPayloadAnalyze">
+</library>
+<library file=stubs/writeMultipleRecords.cc name=writeMultipleRecords>
+  <flags SEAL_PLUGIN_NAME="writeMultipleRecords">
+</library>
