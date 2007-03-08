@@ -6,6 +6,9 @@
 <library file=stubs/writeMultipleRecords.cc name=writeMultipleRecords>
   <flags SEAL_PLUGIN_NAME="writeMultipleRecords">
 </library>
+<library file=stubs/writeBlob.cc name=writeBlob>
+  <flags SEAL_PLUGIN_NAME="writeBlob">
+</library>
 <library file=stubs/IOVPayloadEndOfJob.cc name=IOVPayloadEndOfJob>
   <flags SEAL_PLUGIN_NAME="IOVPayloadEndOfJob">
 </library>
