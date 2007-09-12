@@ -40,6 +40,7 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
   m_session->open();
   std::string catconnect("pfncatalog_memory://POOL_RDBMS?");
+  catconnect.append(connect);
   m_pooldb=new cond::PoolStorageManager(connect,catconnect,m_session);
   m_coraldb=new cond::RelationalStorageManager(connect,m_session);
   if( timetype=="timestamp" ){
