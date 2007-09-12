@@ -17,7 +17,7 @@
 #include "CondCore/DBCommon/interface/ConfigSessionFromParameterSet.h"
 #include "CondCore/DBOutputService/interface/Exception.h"
 #include "CondCore/DBCommon/interface/ObjectRelationalMappingUtility.h"
-#include "CondCore/DBCommon/interface/DBCatalog.h"
+//#include "CondCore/DBCommon/interface/DBCatalog.h"
 #include "CondCore/DBCommon/interface/DBSession.h"
 //POOL include
 #include "FileCatalog/IFileCatalog.h"
@@ -34,41 +34,12 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   m_inTransaction( false )
 {
   std::string connect=iConfig.getParameter<std::string>("connect");
-  std::string catconnect=iConfig.getUntrackedParameter<std::string>("catalog","");
-  cond::DBCatalog mycat;
-  std::pair<std::string,std::string> logicalService=mycat.logicalservice(connect);
-  std::string logicalServiceName=logicalService.first;
-  std::string dataName=logicalService.second;
-  if( !logicalServiceName.empty() ){
-    if( catconnect.empty() ){
-      if( logicalServiceName=="dev" ){
-	catconnect=mycat.defaultDevCatalogName();
-      }else if( logicalServiceName=="online" ){
-	catconnect=mycat.defaultOnlineCatalogName();
-      }else if( logicalServiceName=="offline" ){
-	catconnect=mycat.defaultOfflineCatalogName();
-      }else if( logicalServiceName=="local" ){
-	catconnect="file:localCondDBCatalog.xml";
-	connect=std::string("sqlite_file:")+dataName;
-      }else{
-	throw cond::Exception(std::string("no default catalog found for ")+logicalServiceName);
-      }
-    }
-    if(logicalServiceName != "local"){
-      mycat.poolCatalog().setWriteCatalog(catconnect);
-      mycat.poolCatalog().connect();
-      mycat.poolCatalog().start();
-      std::string pf=mycat.getPFN(mycat.poolCatalog(),connect, false);
-      mycat.poolCatalog().commit();
-      mycat.poolCatalog().disconnect();
-      connect=pf;
-    }
-  }
   m_session=new cond::DBSession(true);
   std::string timetype=iConfig.getParameter< std::string >("timetype");
   edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
   ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
   m_session->open();
+  std::string catconnect("pfncatalog_memory://POOL_RDBMS?");
   m_pooldb=new cond::PoolStorageManager(connect,catconnect,m_session);
   m_coraldb=new cond::RelationalStorageManager(connect,m_session);
   if( timetype=="timestamp" ){
@@ -90,10 +61,12 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   iAR.watchPostModule(this,&cond::service::PoolDBOutputService::postModule);
 }
 
-std::string cond::service::PoolDBOutputService::tag( const std::string& EventSetupRecordName ){
+std::string 
+cond::service::PoolDBOutputService::tag( const std::string& EventSetupRecordName ){
   return this->lookUpRecord(EventSetupRecordName).m_tag;
 }
-bool cond::service::PoolDBOutputService::isNewTagRequest( const std::string& EventSetupRecordName ){
+bool 
+cond::service::PoolDBOutputService::isNewTagRequest( const std::string& EventSetupRecordName ){
   cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
   if(!m_dbstarted) this->initDB();
   return myrecord.m_isNewTag;
@@ -130,8 +103,6 @@ cond::service::PoolDBOutputService::initDB()
     throw cms::Exception( er.what() );
   }catch( const std::exception& er ){
     throw cms::Exception( er.what() );
-  }catch(...){
-    throw cms::Exception( "Unknown error" );
   }
   m_dbstarted=true;
 }
