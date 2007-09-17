@@ -15,9 +15,9 @@
 #include "CondCore/DBCommon/interface/MessageLevel.h"
 #include "CondCore/DBCommon/interface/Exception.h"
 #include "CondCore/DBCommon/interface/ConfigSessionFromParameterSet.h"
+#include "CondCore/DBCommon/interface/SessionConfiguration.h"
 #include "CondCore/DBOutputService/interface/Exception.h"
 #include "CondCore/DBCommon/interface/ObjectRelationalMappingUtility.h"
-//#include "CondCore/DBCommon/interface/DBCatalog.h"
 #include "CondCore/DBCommon/interface/DBSession.h"
 //POOL include
 #include "FileCatalog/IFileCatalog.h"
@@ -36,6 +36,14 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   std::string connect=iConfig.getParameter<std::string>("connect");
   m_session=new cond::DBSession(true);
   std::string timetype=iConfig.getParameter< std::string >("timetype");
+  std::string blobstreamerName("");
+  if( iConfig.exists("BlobStreamerName") ){
+    blobstreamerName=iConfig.getUntrackedParameter<std::string>("BlobStreamerName");
+    blobstreamerName.insert(0,"COND/Services/");
+  }
+  if( !blobstreamerName.empty() ){
+    m_session->sessionConfiguration().setBlobStreamer(blobstreamerName);
+  }
   edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
   ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
   m_session->open();
