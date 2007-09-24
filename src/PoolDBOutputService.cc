@@ -20,7 +20,7 @@
 #include "CondCore/DBCommon/interface/ObjectRelationalMappingUtility.h"
 #include "CondCore/DBCommon/interface/DBSession.h"
 //POOL include
-#include "FileCatalog/IFileCatalog.h"
+//#include "FileCatalog/IFileCatalog.h"
 #include "serviceCallbackToken.h"
 //#include <iostream>
 #include <vector>
@@ -40,8 +40,6 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   if( iConfig.exists("BlobStreamerName") ){
     blobstreamerName=iConfig.getUntrackedParameter<std::string>("BlobStreamerName");
     blobstreamerName.insert(0,"COND/Services/");
-  }
-  if( !blobstreamerName.empty() ){
     m_session->sessionConfiguration().setBlobStreamer(blobstreamerName);
   }
   edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
