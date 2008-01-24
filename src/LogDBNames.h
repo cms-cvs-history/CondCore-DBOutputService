@@ -4,6 +4,7 @@
 namespace cond{
   class LogDBNames{
   public:
+    static std::string SequenceTableName();
     static std::string LogTableName();
   };
 }//ns cond

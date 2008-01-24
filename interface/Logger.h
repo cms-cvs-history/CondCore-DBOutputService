@@ -27,9 +27,11 @@ namespace cond{
   class Logger{
   public:
     explicit Logger(CoralTransaction& coraldb);
-    virtual ~Logger();
+    ~Logger();
     bool getWriteLock() throw ();
     bool releaseWriteLock() throw ();
+    //NB. for oracle only schema owner can do this 
+    void createLogDBIfNonExist();
     //
     //the current local time will be registered as execution time
     //
@@ -58,11 +60,12 @@ namespace cond{
 			const std::string& payloadToken,
 			const cond::service::UserLogInfo& userLogInfo,
 			const std::string& exceptionMessage);
-    //CoralTransaction& m_coraldb;
+    CoralTransaction& m_coraldb;
     coral::ISchema& m_schema;
     bool m_locked;
     coral::IQuery* m_statusEditorHandle;
     SequenceManager* m_sequenceManager;
+    bool m_logTableExists;
   };
 }//ns cond
 #endif
