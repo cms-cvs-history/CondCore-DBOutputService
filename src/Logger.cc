@@ -2,6 +2,7 @@
 #include "CondCore/DBOutputService/interface/UserLogInfo.h"
 #include "CondCore/DBCommon/interface/CoralTransaction.h"
 #include "CondCore/DBCommon/interface/SequenceManager.h"
+#include "CondCore/DBCommon/interface/Exception.h"
 #include "RelationalAccess/ISchema.h"
 #include "RelationalAccess/ITable.h"
 #include "RelationalAccess/ITableDataEditor.h"
@@ -16,6 +17,7 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
 //#include "boost/date_time/gregorian/gregorian_types.hpp" //no i/o just types
 #include <sstream>
+#include <exception>
 namespace cond{
   template <class T> 
   std::string to_string(const T& t){
@@ -59,7 +61,9 @@ cond::Logger::createLogDBIfNonExist(){
   }
   //create sequence table
   cond::SequenceManager sequenceGenerator(m_coraldb,cond::LogDBNames::SequenceTableName());
-  sequenceGenerator.createSequencesTable();
+  if( !sequenceGenerator.existSequencesTable() ){
+    sequenceGenerator.createSequencesTable();
+  }
   //create log table
   coral::TableDescription description( "CONDLOG" );
   description.setName(cond::LogDBNames::LogTableName());
@@ -75,9 +79,12 @@ cond::Logger::createLogDBIfNonExist(){
   description.insertColumn(std::string("PAYLOADNAME"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.setNotNullConstraint(std::string("PAYLOADNAME"));
-  description.insertColumn(std::string("DESTINATION"),
+  description.insertColumn(std::string("PAYLOADTOKEN"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
-  description.setNotNullConstraint(std::string("DESTINATION"));
+  description.setNotNullConstraint(std::string("PAYLOADTOKEN"));
+  description.insertColumn(std::string("DESTINATIONDB"),
+	  coral::AttributeSpecification::typeNameForType<std::string>() );
+  description.setNotNullConstraint(std::string("DESTINATIONDB"));
   description.insertColumn(std::string("PROVENANCE"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.insertColumn(std::string("COMMENT"),
@@ -134,26 +141,30 @@ cond::Logger::insertLogRecord(unsigned long long logId,
 			      const std::string& payloadToken,
 			      const cond::service::UserLogInfo& userLogInfo,
 			      const std::string& exceptionMessage){
-  coral::AttributeList rowData;
-  rowData.extend<unsigned long long>("LOGID");
-  rowData.extend<unsigned long long>("EXECTIME");
-  rowData.extend<std::string>("PAYLOADCONTAINER");
-  rowData.extend<std::string>("DESTINATIONDB");
-  rowData.extend<std::string>("PAYLOADNAME");
-  rowData.extend<std::string>("PAYLOADTOKEN");
-  rowData.extend<std::string>("PROVENANCE");
-  rowData.extend<std::string>("COMMENT");
-  rowData.extend<std::string>("ERRORMESSAGE");
-  rowData["LOGID"].data< unsigned long long >() = logId;
-  rowData["EXECTIME"].data< std::string >() = localtime;
-  rowData["PAYLOADCONTAINER"].data< std::string >() = containerName;
-  rowData["DESTINATIONDB"].data< std::string >() = destDB;
-  rowData["PAYLOADNAME"].data< std::string >() = payloadName;
-  rowData["PAYLOADTOKEN"].data< std::string >() = payloadToken;
-  rowData["PROVENANCE"].data< std::string >() = userLogInfo.provenance;
-  rowData["COMMENT"].data< std::string >() = userLogInfo.comment;
-  rowData["ERRORMESSAGE"].data< std::string >() = exceptionMessage;
-  m_schema.tableHandle(cond::LogDBNames::LogTableName()).dataEditor().insertRow(rowData);
+  try{
+    coral::AttributeList rowData;
+    rowData.extend<unsigned long long>("LOGID");
+    rowData.extend<std::string>("EXECTIME");
+    rowData.extend<std::string>("PAYLOADCONTAINER");
+    rowData.extend<std::string>("DESTINATIONDB");
+    rowData.extend<std::string>("PAYLOADNAME");
+    rowData.extend<std::string>("PAYLOADTOKEN");
+    rowData.extend<std::string>("PROVENANCE");
+    rowData.extend<std::string>("COMMENT");
+    rowData.extend<std::string>("ERRORMESSAGE");
+    rowData["LOGID"].data< unsigned long long >() = logId;
+    rowData["EXECTIME"].data< std::string >() = localtime;
+    rowData["PAYLOADCONTAINER"].data< std::string >() = containerName;
+    rowData["DESTINATIONDB"].data< std::string >() = destDB;
+    rowData["PAYLOADNAME"].data< std::string >() = payloadName;
+    rowData["PAYLOADTOKEN"].data< std::string >() = payloadToken;
+    rowData["PROVENANCE"].data< std::string >() = userLogInfo.provenance;
+    rowData["COMMENT"].data< std::string >() = userLogInfo.comment;
+    rowData["ERRORMESSAGE"].data< std::string >() = exceptionMessage;
+    m_schema.tableHandle(cond::LogDBNames::LogTableName()).dataEditor().insertRow(rowData);
+  }catch(const std::exception& er){
+    throw cond::Exception(std::string(er.what()));
+  }
 }
 
 cond::Logger::~Logger(){
