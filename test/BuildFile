@@ -12,5 +12,8 @@
 <library file=stubs/IOVPayloadEndOfJob.cc name=IOVPayloadEndOfJob>
   <flags EDM_PLUGIN=1>
 </library>
+<library file=stubs/MyDataAnalyzer.cc name=MyDataAnalyzer>
+  <flags EDM_PLUGIN=1>
+</library>
 <bin file=unittest_DBLogger.cpp name=unittest_DBLogger>
 </bin>

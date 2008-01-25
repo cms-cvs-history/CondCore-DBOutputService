@@ -2,6 +2,7 @@
 #include "CondCore/DBOutputService/interface/UserLogInfo.h"
 #include "CondCore/DBCommon/interface/CoralTransaction.h"
 #include "CondCore/DBCommon/interface/SequenceManager.h"
+#include "CondCore/DBCommon/interface/Connection.h"
 #include "CondCore/DBCommon/interface/Exception.h"
 #include "RelationalAccess/ISchema.h"
 #include "RelationalAccess/ITable.h"
@@ -15,7 +16,7 @@
 #include "CoralBase/AttributeSpecification.h"
 #include "LogDBNames.h"
 #include <boost/date_time/posix_time/posix_time_types.hpp> //no i/o just types
-//#include "boost/date_time/gregorian/gregorian_types.hpp" //no i/o just types
+
 #include <sstream>
 #include <exception>
 namespace cond{
@@ -26,12 +27,13 @@ namespace cond{
     return ss.str();
   }
 }
-cond::Logger::Logger(CoralTransaction& coraldb):m_coraldb(coraldb),m_schema(coraldb.nominalSchema()),m_locked(false),m_statusEditorHandle(0),m_sequenceManager(0),m_logTableExists(false){
+cond::Logger::Logger(cond::Connection* connectionHandle):m_connectionHandle(connectionHandle),m_coraldb(connectionHandle->coralTransaction()),m_locked(false),m_statusEditorHandle(0),m_sequenceManager(0),m_logTableExists(false){
 }
 bool
 cond::Logger::getWriteLock()throw() {
   try{
-    coral::ITable& statusTable=m_schema.tableHandle(LogDBNames::LogTableName());
+    m_coraldb.start(false);
+    coral::ITable& statusTable=m_coraldb.nominalSchema().tableHandle(LogDBNames::LogTableName());
     //Instructs the server to lock the rows involved in the result set.
     m_statusEditorHandle=statusTable.newQuery();
     m_statusEditorHandle->setForUpdate();
@@ -50,13 +52,16 @@ cond::Logger::releaseWriteLock()throw() {
     m_statusEditorHandle=0;
   }
   m_locked=false;
+  m_coraldb.commit();
   return false;
 }
 void 
 cond::Logger::createLogDBIfNonExist(){
   if(m_logTableExists) return;
-  if(m_schema.existsTable(cond::LogDBNames::SequenceTableName())&&m_schema.existsTable(cond::LogDBNames::LogTableName())){
+  //m_coraldb.start(false);
+  if(m_coraldb.nominalSchema().existsTable(cond::LogDBNames::SequenceTableName())&&m_coraldb.nominalSchema().existsTable(cond::LogDBNames::LogTableName())){
     m_logTableExists=true;
+    //m_coraldb.commit();
     return;
   }
   //create sequence table
@@ -91,8 +96,9 @@ cond::Logger::createLogDBIfNonExist(){
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.insertColumn(std::string("ERRORMESSAGE"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
-  m_schema.createTable( description ).privilegeManager().grantToPublic( coral::ITablePrivilegeManager::Select );
+  m_coraldb.nominalSchema().createTable( description ).privilegeManager().grantToPublic( coral::ITablePrivilegeManager::Select );
   m_logTableExists=true;
+  //m_coraldb.commit();
 }
 void 
 cond::Logger::logOperationNow(const std::string& containerName,
@@ -161,7 +167,7 @@ cond::Logger::insertLogRecord(unsigned long long logId,
     rowData["PROVENANCE"].data< std::string >() = userLogInfo.provenance;
     rowData["COMMENT"].data< std::string >() = userLogInfo.comment;
     rowData["ERRORMESSAGE"].data< std::string >() = exceptionMessage;
-    m_schema.tableHandle(cond::LogDBNames::LogTableName()).dataEditor().insertRow(rowData);
+    m_coraldb.nominalSchema().tableHandle(cond::LogDBNames::LogTableName()).dataEditor().insertRow(rowData);
   }catch(const std::exception& er){
     throw cond::Exception(std::string(er.what()));
   }

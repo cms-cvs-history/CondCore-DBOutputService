@@ -19,16 +19,16 @@ int main(){
   cond::Connection con(constr,-1);
   session->open();
   con.connect(session);
-  cond::CoralTransaction& coralTransaction=con.coralTransaction();
-  coralTransaction.start(false);
-  cond::Logger mylogger(coralTransaction);
+  //cond::CoralTransaction& coralTransaction=con.coralTransaction();
+  // coralTransaction.start(false);
+  cond::Logger mylogger(&con);
   mylogger.getWriteLock();
   cond::service::UserLogInfo a;
   mylogger.createLogDBIfNonExist();
   mylogger.logOperationNow(std::string("mycontainer"),a,constr,std::string("MyPayload"),std::string("payloadToken"));
    mylogger.logFailedOperationNow(std::string("mycontainer"),a,constr,std::string("MyPayload"),std::string("payloadToken"),"EOOROR");
   mylogger.releaseWriteLock();
-  coralTransaction.commit();
+  //coralTransaction.commit();
   con.disconnect();
   delete session;
 }

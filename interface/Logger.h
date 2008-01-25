@@ -15,7 +15,7 @@
 #include "LogEntry.h"
 #include "UserLogInfo.h"
 namespace coral{
-  class ISchema;  
+  //class ISchema;  
   class IQuery;
 }
 namespace cond{
@@ -23,10 +23,11 @@ namespace cond{
     class UserLogInfo;
   }
   class CoralTransaction;
+  class Connection;
   class SequenceManager;
   class Logger{
   public:
-    explicit Logger(CoralTransaction& coraldb);
+    explicit Logger(Connection* connectionHandle);
     ~Logger();
     bool getWriteLock() throw ();
     bool releaseWriteLock() throw ();
@@ -60,8 +61,9 @@ namespace cond{
 			const std::string& payloadToken,
 			const cond::service::UserLogInfo& userLogInfo,
 			const std::string& exceptionMessage);
+    Connection* m_connectionHandle;
     CoralTransaction& m_coraldb;
-    coral::ISchema& m_schema;
+    //coral::ISchema& m_schema;
     bool m_locked;
     coral::IQuery* m_statusEditorHandle;
     SequenceManager* m_sequenceManager;

@@ -21,17 +21,23 @@
 #include "CondCore/DBCommon/interface/ObjectRelationalMappingUtility.h"
 #include "CondCore/DBCommon/interface/DBSession.h"
 #include "FWCore/Framework/interface/IOVSyncValue.h"
+
 //POOL include
 //#include "FileCatalog/IFileCatalog.h"
 #include "serviceCallbackToken.h"
+#include "CondCore/DBOutputService/interface/UserLogInfo.h"
 //#include <iostream>
 #include <vector>
+static cond::ConnectionHandler& conHandler=cond::ConnectionHandler::Instance();
 cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet & iConfig,edm::ActivityRegistry & iAR ): 
   m_currentTime( 0 ),
   m_session( 0 ),
-  m_dbstarted( false )
+  m_dbstarted( false ),
+  m_logdb( 0 ),
+  m_logdbOn( false )
 {
   std::string connect=iConfig.getParameter<std::string>("connect");
+  std::string logconnect=iConfig.getUntrackedParameter<std::string>("logconnect");
   m_session=new cond::DBSession;  
   m_timetype=iConfig.getParameter< std::string >("timetype");
   std::string blobstreamerName("");
@@ -42,10 +48,13 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   }
   edm::ParameterSet connectionPset = iConfig.getParameter<edm::ParameterSet>("DBParameters"); 
   ConfigSessionFromParameterSet configConnection(*m_session,connectionPset);
-  static cond::ConnectionHandler& conHandler=cond::ConnectionHandler::Instance();
   //std::string catconnect("pfncatalog_memory://POOL_RDBMS?");
   //catconnect.append(connect);
   conHandler.registerConnection("outputdb",connect,0);
+  if( !logconnect.empty() ){
+    m_logdbOn=true;
+    conHandler.registerConnection("logdb",logconnect,0);
+  }
   m_session->open();
   conHandler.connect(m_session);
   m_connection=conHandler.getConnection("outputdb");
@@ -56,6 +65,10 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
     thisrecord.m_containerName = itToPut->getParameter<std::string>("record");
     thisrecord.m_tag = itToPut->getParameter<std::string>("tag");
     m_callbacks.insert(std::make_pair(cond::service::serviceCallbackToken::build(thisrecord.m_containerName),thisrecord));
+    if(m_logdbOn){
+      cond::service::UserLogInfo userloginfo;
+      m_logheaders.insert(std::make_pair(cond::service::serviceCallbackToken::build(thisrecord.m_containerName),userloginfo));
+    }
   }
   iAR.watchPreProcessEvent(this,&cond::service::PoolDBOutputService::preEventProcessing);
   iAR.watchPostEndJob(this,&cond::service::PoolDBOutputService::postEndJob);
@@ -97,7 +110,14 @@ cond::service::PoolDBOutputService::initDB()
 	it->second.m_isNewTag=false;
       }
     }
-    coraldb.commit();
+    coraldb.commit();    
+    //init logdb if required
+    if(m_logdbOn){
+      m_logdb=new cond::Logger(conHandler.getConnection("logdb"));
+      m_logdb->getWriteLock();
+      m_logdb->createLogDBIfNonExist();
+      m_logdb->releaseWriteLock();
+    }
   }catch( const std::exception& er ){
     throw cond::Exception( "PoolDBOutputService::initDB "+std::string(er.what()) );
   }
@@ -107,7 +127,9 @@ cond::service::PoolDBOutputService::initDB()
 void 
 cond::service::PoolDBOutputService::postEndJob()
 {
-
+  if(m_logdb){
+    delete m_logdb;
+  }
 }
 
 void 
@@ -205,7 +227,13 @@ cond::service::PoolDBOutputService::lookUpRecord(const std::string& EventSetupRe
   if(it==m_callbacks.end()) throw cond::UnregisteredRecordException(EventSetupRecordName);
   return it->second;
 }
-
+cond::service::UserLogInfo& 
+cond::service::PoolDBOutputService::lookUpUserLogInfo(const std::string& EventSetupRecordName){
+  size_t callbackToken=this->callbackToken( EventSetupRecordName );
+  std::map<size_t,cond::service::UserLogInfo>::iterator it=m_logheaders.find(callbackToken);
+  if(it==m_logheaders.end()) throw cond::UnregisteredRecordException(EventSetupRecordName);
+  return it->second;
+}
 void 
 cond::service::PoolDBOutputService::appendIOV(cond::PoolTransaction& pooldb,
 						   cond::service::serviceCallbackRecord& record, 
@@ -231,4 +259,11 @@ cond::service::PoolDBOutputService::insertIOV( cond::PoolTransaction& pooldb,
   std::string iovToken=editor->token();
   delete editor;    
   return iovToken;
+}
+void
+cond::service::PoolDBOutputService::setLogHeaderForRecord(const std::string& EventSetupRecordName,const std::string& dataprovenance,const std::string& comment)
+{
+  cond::service::UserLogInfo& myloginfo=this->lookUpUserLogInfo(EventSetupRecordName);
+  myloginfo.provenance=dataprovenance;
+  myloginfo.comment=comment;
 }
