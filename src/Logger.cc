@@ -79,18 +79,31 @@ cond::Logger::createLogDBIfNonExist(){
   description.insertColumn(std::string("EXECTIME"),
 			   coral::AttributeSpecification::typeNameForType<std::string>() );
   description.setNotNullConstraint(std::string("EXECTIME"));
+  
+  description.insertColumn(std::string("IOVTAG"),
+			   coral::AttributeSpecification::typeNameForType<std::string>() );
+  description.setNotNullConstraint(std::string("IOVTAG"));
+
+  description.insertColumn(std::string("IOVTIMETYPE"),
+			   coral::AttributeSpecification::typeNameForType<std::string>() );
+  description.setNotNullConstraint(std::string("IOVTIMETYPE"));
+
   description.insertColumn(std::string("PAYLOADCONTAINER"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.setNotNullConstraint(std::string("PAYLOADCONTAINER"));
+
   description.insertColumn(std::string("PAYLOADNAME"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.setNotNullConstraint(std::string("PAYLOADNAME"));
+
   description.insertColumn(std::string("PAYLOADTOKEN"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.setNotNullConstraint(std::string("PAYLOADTOKEN"));
+
   description.insertColumn(std::string("DESTINATIONDB"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.setNotNullConstraint(std::string("DESTINATIONDB"));
+
   description.insertColumn(std::string("PROVENANCE"),
 	  coral::AttributeSpecification::typeNameForType<std::string>() );
   description.insertColumn(std::string("COMMENT"),
@@ -105,7 +118,9 @@ void
 cond::Logger::logOperationNow(
 			      const cond::service::UserLogInfo& userlogInfo,
 			      const std::string& destDB,
-			      const std::string& payloadToken
+			      const std::string& payloadToken,
+			      const std::string& iovtag,
+			      const std::string& iovtimetype
 			      ){
   //aquirelocaltime
   //using namespace boost::posix_time;
@@ -117,13 +132,15 @@ cond::Logger::logOperationNow(
   }
   unsigned long long targetLogId=m_sequenceManager->incrementId(LogDBNames::LogTableName());
   //insert log record with the new id
-  this->insertLogRecord(targetLogId,now,destDB,payloadToken,userlogInfo,"");
+  this->insertLogRecord(targetLogId,now,destDB,payloadToken,userlogInfo,iovtag,iovtimetype,"");
 }
 void 
 cond::Logger::logFailedOperationNow(
-				    const cond::service::UserLogInfo& userlogInfo,
+			       const cond::service::UserLogInfo& userlogInfo,
 			       const std::string& destDB,
 			       const std::string& payloadToken,
+			       const std::string& iovtag,
+			       const std::string& iovtimetype,
 			       const std::string& exceptionMessage
 				    ){
   //aquirelocaltime
@@ -135,7 +152,7 @@ cond::Logger::logFailedOperationNow(
   }
   unsigned long long targetLogId=m_sequenceManager->incrementId(LogDBNames::LogTableName());
   //insert log record with the new id
-  this->insertLogRecord(targetLogId,now,destDB,payloadToken,userlogInfo,exceptionMessage);
+  this->insertLogRecord(targetLogId,now,destDB,payloadToken,userlogInfo,iovtag,iovtimetype,exceptionMessage);
 }
 void
 cond::Logger::insertLogRecord(unsigned long long logId,
@@ -143,6 +160,8 @@ cond::Logger::insertLogRecord(unsigned long long logId,
 			      const std::string& destDB,
 			      const std::string& payloadToken,
 			      const cond::service::UserLogInfo& userLogInfo,
+			      const std::string& iovtag,
+			      const std::string& iovtimetype,
 			      const std::string& exceptionMessage){
   try{
     cond::TokenInterpreter tokenteller(payloadToken);
@@ -157,6 +176,8 @@ cond::Logger::insertLogRecord(unsigned long long logId,
     rowData.extend<std::string>("PAYLOADTOKEN");
     rowData.extend<std::string>("PROVENANCE");
     rowData.extend<std::string>("COMMENT");
+    rowData.extend<std::string>("IOVTAG");
+    rowData.extend<std::string>("IOVTIMETYPE");
     rowData.extend<std::string>("ERRORMESSAGE");
     rowData["LOGID"].data< unsigned long long >() = logId;
     rowData["EXECTIME"].data< std::string >() = localtime;
@@ -166,6 +187,8 @@ cond::Logger::insertLogRecord(unsigned long long logId,
     rowData["PAYLOADTOKEN"].data< std::string >() = payloadToken;
     rowData["PROVENANCE"].data< std::string >() = userLogInfo.provenance;
     rowData["COMMENT"].data< std::string >() = userLogInfo.comment;
+    rowData["IOVTAG"].data< std::string >() = iovtag;
+    rowData["IOVTIMETYPE"].data< std::string >() = iovtimetype;
     rowData["ERRORMESSAGE"].data< std::string >() = exceptionMessage;
     m_coraldb.nominalSchema().tableHandle(cond::LogDBNames::LogTableName()).dataEditor().insertRow(rowData);
   }catch(const std::exception& er){

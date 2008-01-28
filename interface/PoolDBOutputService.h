@@ -1,8 +1,6 @@
 #ifndef CondCore_PoolDBOutputService_h
 #define CondCore_PoolDBOutputService_h
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
-//#include "CondCore/DBCommon/interface/DBSession.h"
-//#include "CondCore/IOVService/interface/IOVService.h"
 #include "CondCore/DBCommon/interface/PoolTransaction.h"
 #include "CondCore/DBCommon/interface/CoralTransaction.h"
 #include "CondCore/DBCommon/interface/TypedRef.h"
@@ -77,11 +75,10 @@ namespace cond{
 	//aquire writer lock
 	cond::PoolTransaction& pooldb=m_connection->poolTransaction();
 	std::string iovToken;
-	cond::service::UserLogInfo a;
-	a.provenance="me";
-	a.comment="dummy";
 	std::string payloadToken("");
-	m_logdb->getWriteLock();
+	if(withlogging){
+	  m_logdb->getWriteLock();
+	}
 	try{
 	  pooldb.start(false);
 	  cond::TypedRef<T> myPayload(pooldb,firstPayloadObj);
@@ -99,62 +96,109 @@ namespace cond{
 	  m_newtags.push_back( std::make_pair<std::string,std::string>(myrecord.m_tag,iovToken) );	  
 	  if(withlogging){
 	    if(!m_logdb)throw cond::Exception("cannot log to non-existing log db");
-	    m_logdb->logOperationNow("mycontainer",a,"destDB","MyPayload",payloadToken);
+	    std::string destconnect=m_connection->connectStr();
+	    cond::service::UserLogInfo a=this->lookUpUserLogInfo(EventSetupRecordName);
+	    m_logdb->logOperationNow(a,destconnect,payloadToken,myrecord.m_tag,m_timetype);
 	  }
 	}catch(const std::exception& er){
 	  if(withlogging){
-	    m_logdb->logFailedOperationNow("mycontainer",a,"destDB","MyPayload",payloadToken,std::string(er.what()));
+	    std::string destconnect=m_connection->connectStr();
+	    cond::service::UserLogInfo a=this->lookUpUserLogInfo(EventSetupRecordName);
+	    m_logdb->logFailedOperationNow(a,destconnect,payloadToken,myrecord.m_tag,m_timetype,std::string(er.what()));
 	    m_logdb->releaseWriteLock();
 	  }
 	  throw cond::Exception("PoolDBOutputService::createNewIOV "+std::string(er.what()));
 	}
-	m_logdb->releaseWriteLock();
+	if(withlogging){
+	  m_logdb->releaseWriteLock();
+	}
       }
       void createNewIOV( const std::string& firstPayloadToken, 
 			cond::Time_t firstTillTime,
-			const std::string& EventSetupRecordName );
+			const std::string& EventSetupRecordName,
+			bool withlogging=false);
       template<typename T>
 	void appendTillTime( T* payloadObj, 
 			     cond::Time_t tillTime,
-			     const std::string& EventSetupRecordName
-			     ){
+			     const std::string& EventSetupRecordName,
+			     bool withlogging=false){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
 	if (!m_dbstarted) this->initDB();
 	cond::PoolTransaction& pooldb=m_connection->poolTransaction();
+	if(withlogging){
+	  m_logdb->getWriteLock();
+	}
+	std::string payloadToken("");
 	try{
 	  pooldb.start(false);
 	  cond::TypedRef<T> myPayload(pooldb,payloadObj);
 	  myPayload.markWrite(EventSetupRecordName);
-	  std::string payloadToken=myPayload.token();
+	  payloadToken=myPayload.token();
 	  std::string iovToken=this->insertIOV(pooldb,myrecord,payloadToken,tillTime);
 	  pooldb.commit();
+	  if(withlogging){
+	    if(!m_logdb)throw cond::Exception("cannot log to non-existing log db");
+	    std::string destconnect=m_connection->connectStr();
+	    cond::service::UserLogInfo a=this->lookUpUserLogInfo(EventSetupRecordName);
+	    m_logdb->logOperationNow(a,destconnect,payloadToken,myrecord.m_tag,m_timetype);
+	  }
 	}catch(const std::exception& er){
+	  if(withlogging){
+	    std::string destconnect=m_connection->connectStr();
+	    cond::service::UserLogInfo a=this->lookUpUserLogInfo(EventSetupRecordName);
+	    m_logdb->logFailedOperationNow(a,destconnect,payloadToken,myrecord.m_tag,m_timetype,std::string(er.what()));
+	    m_logdb->releaseWriteLock();
+	  }
 	  throw cond::Exception("PoolDBOutputService::appendTillTime "+std::string(er.what()));
+	}
+	if(withlogging){
+	  m_logdb->releaseWriteLock();
 	}
       }
       void appendTillTime( const std::string& payloadToken, 
 			   cond::Time_t tillTime,
-			   const std::string& EventSetupRecordName
-			    );
+			   const std::string& EventSetupRecordName,
+			   bool withlogging=false
+			   );
       
       template<typename T>
 	void appendSinceTime( T* payloadObj, 
 			      cond::Time_t sinceTime,
-			      const std::string& EventSetupRecordName ){
+			      const std::string& EventSetupRecordName,
+			      bool withlogging=false){
 	cond::service::serviceCallbackRecord& myrecord=this->lookUpRecord(EventSetupRecordName);
 	if (!m_dbstarted) {
 	  this->initDB();
 	}
 	cond::PoolTransaction& pooldb=m_connection->poolTransaction();
+	if(withlogging){
+	  m_logdb->getWriteLock();
+	}
+	std::string payloadToken("");
 	try{	  
 	  pooldb.start(false);
 	  cond::TypedRef<T> myPayload(pooldb,payloadObj);
 	  myPayload.markWrite(EventSetupRecordName);
-	  std::string payloadToken=myPayload.token();
+	  payloadToken=myPayload.token();
 	  this->appendIOV(pooldb,myrecord,payloadToken,sinceTime);
 	  pooldb.commit();
+	  if(withlogging){
+	    if(!m_logdb)throw cond::Exception("cannot log to non-existing log db");
+	    std::string destconnect=m_connection->connectStr();
+	    cond::service::UserLogInfo a=this->lookUpUserLogInfo(EventSetupRecordName);
+	    m_logdb->logOperationNow(a,destconnect,payloadToken,myrecord.m_tag,m_timetype);
+	  }
 	}catch(const std::exception& er){
+	  if(withlogging){
+	    std::string destconnect=m_connection->connectStr();
+	    cond::service::UserLogInfo a=this->lookUpUserLogInfo(EventSetupRecordName);
+	    m_logdb->logFailedOperationNow(a,destconnect,payloadToken,myrecord.m_tag,m_timetype,std::string(er.what()));
+	    m_logdb->releaseWriteLock();
+	  }
 	  throw cond::Exception("PoolDBOutputService::appendSinceTime "+std::string(er.what()));
+	}
+	if(withlogging){
+	  m_logdb->releaseWriteLock();
 	}
       }
       //
@@ -165,7 +209,8 @@ namespace cond{
       // 
       void appendSinceTime( const std::string& payloadToken, 
 			   cond::Time_t sinceTime,
-			   const std::string& EventSetupRecordName );
+			   const std::string& EventSetupRecordName,
+			   bool withlogging=false);
 
       //
       // Service time utility callback method 

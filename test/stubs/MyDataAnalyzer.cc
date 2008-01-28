@@ -54,7 +54,7 @@ void MyDataAnalyzer::endJob(){
       }
       cond::Time_t thisPayload_valid_since=5;
       std::cout<<"appeding since time "<<thisPayload_valid_since<<std::endl;
-      mydbservice->appendSinceTime<Pedestals>(myped,thisPayload_valid_since,m_record);
+      mydbservice->appendSinceTime<Pedestals>(myped,thisPayload_valid_since,m_record,m_LoggingOn);
       std::cout<<"done"<<std::endl;
     }
   }catch(const cond::Exception& er){

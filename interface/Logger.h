@@ -39,7 +39,9 @@ namespace cond{
     void logOperationNow(
 			 const cond::service::UserLogInfo& userlogInfo,
 			 const std::string& destDB,
-			 const std::string& payloadToken
+			 const std::string& payloadToken,
+			 const std::string& iovtag,
+			 const std::string& iovtimetype
 			 );
     //
     //the current local time will be registered as execution time
@@ -49,6 +51,8 @@ namespace cond{
 			       const cond::service::UserLogInfo& userlogInfo,
 			       const std::string& destDB,
 			       const std::string& payloadToken,
+			       const std::string& iovtag,
+			       const std::string& iovtimetype,
 			       const std::string& exceptionMessage
 			       );
   private:
@@ -57,7 +61,10 @@ namespace cond{
 			const std::string& destDB,
 			const std::string& payloadToken,
 			const cond::service::UserLogInfo& userLogInfo,
+			const std::string& iovtag,
+			const std::string& iovtimetype,
 			const std::string& exceptionMessage);
+    
     Connection* m_connectionHandle;
     CoralTransaction& m_coraldb;
     //coral::ISchema& m_schema;
