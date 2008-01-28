@@ -37,7 +37,10 @@ cond::service::PoolDBOutputService::PoolDBOutputService(const edm::ParameterSet 
   m_logdbOn( false )
 {
   std::string connect=iConfig.getParameter<std::string>("connect");
-  std::string logconnect=iConfig.getUntrackedParameter<std::string>("logconnect");
+  std::string logconnect("");
+  if( iConfig.exists("logconnect") ){
+    logconnect=iConfig.getUntrackedParameter<std::string>("logconnect");
+  }  
   m_session=new cond::DBSession;  
   m_timetype=iConfig.getParameter< std::string >("timetype");
   std::string blobstreamerName("");
