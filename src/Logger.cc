@@ -2,6 +2,7 @@
 #include "CondCore/DBOutputService/interface/UserLogInfo.h"
 #include "CondCore/DBCommon/interface/CoralTransaction.h"
 #include "CondCore/DBCommon/interface/SequenceManager.h"
+#include "CondCore/DBCommon/interface/TokenInterpreter.h"
 #include "CondCore/DBCommon/interface/Connection.h"
 #include "CondCore/DBCommon/interface/Exception.h"
 #include "RelationalAccess/ISchema.h"
@@ -101,10 +102,9 @@ cond::Logger::createLogDBIfNonExist(){
   //m_coraldb.commit();
 }
 void 
-cond::Logger::logOperationNow(const std::string& containerName,
+cond::Logger::logOperationNow(
 			      const cond::service::UserLogInfo& userlogInfo,
 			      const std::string& destDB,
-			      const std::string& payloadName,
 			      const std::string& payloadToken
 			      ){
   //aquirelocaltime
@@ -117,13 +117,12 @@ cond::Logger::logOperationNow(const std::string& containerName,
   }
   unsigned long long targetLogId=m_sequenceManager->incrementId(LogDBNames::LogTableName());
   //insert log record with the new id
-  this->insertLogRecord(targetLogId,now,containerName,destDB,payloadName,payloadToken,userlogInfo,"");
+  this->insertLogRecord(targetLogId,now,destDB,payloadToken,userlogInfo,"");
 }
 void 
-cond::Logger::logFailedOperationNow(const std::string& containerName,
+cond::Logger::logFailedOperationNow(
 				    const cond::service::UserLogInfo& userlogInfo,
 			       const std::string& destDB,
-			       const std::string& payloadName,
 			       const std::string& payloadToken,
 			       const std::string& exceptionMessage
 				    ){
@@ -136,18 +135,19 @@ cond::Logger::logFailedOperationNow(const std::string& containerName,
   }
   unsigned long long targetLogId=m_sequenceManager->incrementId(LogDBNames::LogTableName());
   //insert log record with the new id
-  this->insertLogRecord(targetLogId,now,containerName,destDB,payloadName,payloadToken,userlogInfo,exceptionMessage);
+  this->insertLogRecord(targetLogId,now,destDB,payloadToken,userlogInfo,exceptionMessage);
 }
 void
 cond::Logger::insertLogRecord(unsigned long long logId,
 			      const std::string& localtime,
-			      const std::string& containerName,
 			      const std::string& destDB,
-			      const std::string& payloadName, 
 			      const std::string& payloadToken,
 			      const cond::service::UserLogInfo& userLogInfo,
 			      const std::string& exceptionMessage){
   try{
+    cond::TokenInterpreter tokenteller(payloadToken);
+    std::string containerName=tokenteller.containerName();
+    std::string payloadName=tokenteller.className();
     coral::AttributeList rowData;
     rowData.extend<unsigned long long>("LOGID");
     rowData.extend<std::string>("EXECTIME");

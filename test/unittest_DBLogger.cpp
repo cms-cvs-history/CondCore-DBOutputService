@@ -4,14 +4,25 @@
 #include "CondCore/DBCommon/interface/MessageLevel.h"
 #include "CondCore/DBCommon/interface/Connection.h"
 #include "CondCore/DBCommon/interface/CoralTransaction.h"
+#include "CondCore/DBCommon/interface/TokenBuilder.h"
+//#include "CondCore/DBCommon/interface/TokenInterpreter.h"
 #include "CondCore/DBOutputService/interface/Logger.h"
 #include "CondCore/DBOutputService/interface/UserLogInfo.h"
+
 #include <string>
 #include <iostream>
 //#include <stdio.h>
 //#include <time.h>
 
 int main(){
+  cond::TokenBuilder tk;
+  tk.set("3E60FA40-D105-DA11-981C-000E0C4DE431",
+	 "CondFormatsCalibration",
+	 "Pedestals",
+	 "PedestalsRcd",
+	 0);
+  std::string tok1=tk.tokenAsString();
+
   std::string constr("sqlite_file:mylog.db");
   cond::DBSession* session=new cond::DBSession;
   session->configuration().setMessageLevel( cond::Error );
@@ -25,8 +36,8 @@ int main(){
   mylogger.getWriteLock();
   cond::service::UserLogInfo a;
   mylogger.createLogDBIfNonExist();
-  mylogger.logOperationNow(std::string("mycontainer"),a,constr,std::string("MyPayload"),std::string("payloadToken"));
-   mylogger.logFailedOperationNow(std::string("mycontainer"),a,constr,std::string("MyPayload"),std::string("payloadToken"),"EOOROR");
+  mylogger.logOperationNow(a,constr,tok1);
+  mylogger.logFailedOperationNow(a,constr,tok1,"EOOROR");
   mylogger.releaseWriteLock();
   //coralTransaction.commit();
   con.disconnect();

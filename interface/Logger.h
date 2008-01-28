@@ -35,29 +35,26 @@ namespace cond{
     void createLogDBIfNonExist();
     //
     //the current local time will be registered as execution time
-    //
-    void logOperationNow(const std::string& containerName,
+    // payloadName and containerName are also logged but they are deduced from payloadToken
+    void logOperationNow(
 			 const cond::service::UserLogInfo& userlogInfo,
 			 const std::string& destDB,
-			 const std::string& payloadName,
 			 const std::string& payloadToken
 			 );
     //
     //the current local time will be registered as execution time
     //
-    void logFailedOperationNow(const std::string& containerName,
+    // payloadName and containerName are also logged but they are deduced from payloadToken
+    void logFailedOperationNow(
 			       const cond::service::UserLogInfo& userlogInfo,
 			       const std::string& destDB,
-			       const std::string& payloadName,
 			       const std::string& payloadToken,
 			       const std::string& exceptionMessage
 			       );
   private:
     void insertLogRecord(unsigned long long logId,
 			const std::string& localtime,
-			const std::string& containerName,
 			const std::string& destDB,
-			const std::string& payloadName, 
 			const std::string& payloadToken,
 			const cond::service::UserLogInfo& userLogInfo,
 			const std::string& exceptionMessage);
