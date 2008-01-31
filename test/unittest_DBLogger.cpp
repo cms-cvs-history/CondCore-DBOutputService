@@ -36,8 +36,8 @@ int main(){
   mylogger.getWriteLock();
   cond::service::UserLogInfo a;
   mylogger.createLogDBIfNonExist();
-  mylogger.logOperationNow(a,constr,tok1,"mytag1","runnumber");
-  mylogger.logFailedOperationNow(a,constr,tok1,"mytag1","runnumber","EOOROR");
+  mylogger.logOperationNow(a,constr,tok1,"mytag1","runnumber",0);
+  mylogger.logFailedOperationNow(a,constr,tok1,"mytag1","runnumber",1,"EOOROR");
   mylogger.releaseWriteLock();
   //coralTransaction.commit();
   con.disconnect();
