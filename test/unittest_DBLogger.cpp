@@ -48,7 +48,7 @@ int main(){
   mylogger.releaseWriteLock();
   std::cout<<"about to lookup last entry"<<std::endl;
   cond::LogDBEntry result;
-  mylogger. LookupLastEntryByProvenance("me",result);
+  mylogger.LookupLastEntryByProvenance("me",result);
   std::cout<<"result \n";
   std::cout<<"logId "<<result.logId<<"\n";
   std::cout<<"destinationDB "<<result.destinationDB<<"\n";
