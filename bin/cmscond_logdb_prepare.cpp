@@ -4,7 +4,7 @@
 #include "CondCore/DBCommon/interface/MessageLevel.h"
 #include "CondCore/DBCommon/interface/DBSession.h"
 #include "CondCore/DBCommon/interface/Exception.h"
-#include "CondCore/DBOutputService/interface/Logger.h"
+#include "CondCore/DBCommon/interface/Logger.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 int main( int argc, char** argv ){
