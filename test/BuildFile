@@ -21,3 +21,7 @@
 <library file=stubs/Timestamp.cc name=Timestamp>
   <flags EDM_PLUGIN=1>
 </library>
+
+<library file=stubs/writeKeyed.cc name=writeKeyed>
+  <flags EDM_PLUGIN=1>
+</library>
