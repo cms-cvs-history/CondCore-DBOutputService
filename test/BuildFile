@@ -25,3 +25,7 @@
 <library file=stubs/writeKeyed.cc name=writeKeyed>
   <flags EDM_PLUGIN=1>
 </library>
+<library file=stubs/writeInt.cc name=writeInt>
+<use name=CondFormats/Common>
+  <flags EDM_PLUGIN=1>
+</library>
