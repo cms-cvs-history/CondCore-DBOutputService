@@ -1,8 +1,5 @@
-#include "CondCore/DBCommon/interface/Connection.h"
-#include "CondCore/DBCommon/interface/AuthenticationMethod.h"
-#include "CondCore/DBCommon/interface/SessionConfiguration.h"
+#include "CondCore/DBCommon/interface/DbConnection.h"
 #include "CondCore/DBCommon/interface/MessageLevel.h"
-#include "CondCore/DBCommon/interface/DBSession.h"
 #include "CondCore/DBCommon/interface/Exception.h"
 #include "CondCore/DBCommon/interface/Logger.h"
 #include <boost/program_options.hpp>
@@ -55,36 +52,32 @@ int main( int argc, char** argv ){
   if(vm.count("debug")){
     debug=true;
   }
-  cond::DBSession* session=new cond::DBSession;
+  cond::DbConnection connection;
   if( !authPath.empty() ){
-    session->configuration().setAuthenticationMethod( cond::XML );
+    connection.configuration().setAuthenticationPath( authPath );
   }else{
-    session->configuration().setAuthenticationMethod( cond::Env );
+    std::string userenv(std::string("CORAL_AUTH_USER=")+user);
+    std::string passenv(std::string("CORAL_AUTH_PASSWORD=")+pass);
+    ::putenv(const_cast<char*>(userenv.c_str()));
+    ::putenv(const_cast<char*>(passenv.c_str()));
   }
   if(debug){
-    session->configuration().setMessageLevel( cond::Debug );
+    connection.configuration().setMessageLevel( coral::Debug );
   }else{
-    session->configuration().setMessageLevel( cond::Error );
+    connection.configuration().setMessageLevel( coral::Error );
   }
-  std::string userenv(std::string("CORAL_AUTH_USER=")+user);
-  std::string passenv(std::string("CORAL_AUTH_PASSWORD=")+pass);
-  std::string authenv(std::string("CORAL_AUTH_PATH=")+authPath);
-  ::putenv(const_cast<char*>(userenv.c_str()));
-  ::putenv(const_cast<char*>(passenv.c_str()));
-  ::putenv(const_cast<char*>(authenv.c_str()));
+
+  connection.configure();
+  cond::DbSession session = connection.createSession();
+  session.open( connect );
   
-  cond::Connection myconnection(connect,-1);  
-  session->open();
   try{
-    myconnection.connect(session);
-    cond::Logger mylogger(&myconnection);
+    cond::Logger mylogger(session);
     mylogger.getWriteLock();
     mylogger.createLogDBIfNonExist();
     mylogger.releaseWriteLock();
-    myconnection.disconnect();
   }catch(std::exception& er){
       std::cout<<er.what()<<std::endl;
   }
-  delete session;
   return 0;
 }
