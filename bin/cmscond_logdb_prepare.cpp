@@ -1,5 +1,4 @@
 #include "CondCore/DBCommon/interface/DbConnection.h"
-#include "CondCore/DBCommon/interface/MessageLevel.h"
 #include "CondCore/DBCommon/interface/Exception.h"
 #include "CondCore/DBCommon/interface/Logger.h"
 #include <boost/program_options.hpp>
