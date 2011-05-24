@@ -72,9 +72,7 @@ int main( int argc, char** argv ){
   
   try{
     cond::Logger mylogger(session);
-    mylogger.getWriteLock();
     mylogger.createLogDBIfNonExist();
-    mylogger.releaseWriteLock();
   }catch(std::exception& er){
       std::cout<<er.what()<<std::endl;
   }
